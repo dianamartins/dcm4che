@@ -92,8 +92,14 @@ public class StoreSCP {
     private File storageDir;
     private AttributesFormat filePathFormat;
     private int status;
-    private final BasicCStoreSCP cstoreSCP = new BasicCStoreSCP("*") {
+    private final BasicCStoreSCP cstoreSCP;
 
+   private class DefaultStoreSCP extends BasicCStoreSCP{
+	   
+	   public DefaultStoreSCP(){
+		   super("*");
+	   }
+	   
         @Override
         protected void store(Association as, PresentationContext pc,
                 Attributes rq, PDVInputStream data, Attributes rsp)
@@ -105,6 +111,7 @@ public class StoreSCP {
             String cuid = rq.getString(Tag.AffectedSOPClassUID);
             String iuid = rq.getString(Tag.AffectedSOPInstanceUID);
             String tsuid = pc.getTransferSyntax();
+            
             File file = new File(storageDir, iuid + PART_EXT);
             try {
                 storeTo(as, as.createFileMetaInformation(iuid, cuid, tsuid),
@@ -118,11 +125,16 @@ public class StoreSCP {
                 throw new DicomServiceException(Status.ProcessingFailure, e);
             }
         }
+   }
+   
 
-    };
-
-    public StoreSCP() throws IOException {
-        device.setDimseRQHandler(createServiceRegistry());
+    public StoreSCP(CommandLine cl) throws IOException {
+    	if (cl.hasOption("hbase")){
+    		cstoreSCP = new DefaultHBaseStore(cl.getOptionValue("hbase"));
+    	}else{
+    		cstoreSCP = new DefaultStoreSCP();
+    	}
+    	device.setDimseRQHandler(createServiceRegistry());
         device.addConnection(conn);
         device.addApplicationEntity(ae);
         ae.setAssociationAcceptor(true);
@@ -187,6 +199,10 @@ public class StoreSCP {
 
     public void setStatus(int status) {
         this.status = status;
+        if(this.cstoreSCP instanceof HBaseStore){
+        	((HBaseStore)this.cstoreSCP).setStatus(status);
+        }
+        
     }
 
     private static CommandLine parseComandLine(String[] args)
@@ -195,6 +211,7 @@ public class StoreSCP {
         CLIUtils.addBindServerOption(opts);
         CLIUtils.addAEOptions(opts);
         CLIUtils.addCommonOptions(opts);
+        addHBaseConfig(opts);
         addStatusOption(opts);
         addStorageDirectoryOptions(opts);
         addTransferCapabilityOptions(opts);
@@ -209,6 +226,16 @@ public class StoreSCP {
                 .withDescription(rb.getString("status"))
                 .withLongOpt("status")
                 .create(null));
+    }
+    
+    @SuppressWarnings("static-access")
+    public static void addHBaseConfig(Options opts){
+    	opts.addOption(OptionBuilder.isRequired(false)
+    			.hasArgs().
+    			withArgName("hbase")
+    			.withDescription("hbase configuration file")
+    			.withLongOpt("hbase")
+    			.create("f"));
     }
 
     @SuppressWarnings("static-access")
@@ -243,8 +270,9 @@ public class StoreSCP {
 
     public static void main(String[] args) {
         try {
+        	//String [] myargs = {"-b","STORESCP:11115"}; 
             CommandLine cl = parseComandLine(args);
-            StoreSCP main = new StoreSCP();
+            StoreSCP main = new StoreSCP(cl);
             CLIUtils.configureBindServer(main.conn, main.ae, cl);
             CLIUtils.configure(main.conn, cl);
             main.setStatus(CLIUtils.getIntOption(cl, "status", 0));

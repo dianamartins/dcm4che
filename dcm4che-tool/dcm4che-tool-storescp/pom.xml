@@ -46,8 +46,16 @@
   </parent>
   <artifactId>dcm4che-tool-storescp</artifactId>
   <name>dcm4che-tool-storescp</name>
+  <properties>
+    <hbase.version>0.98.19-hadoop2</hbase.version>
+  </properties>
   <description>Receive DICOM Composite Objects from peer DICOM AE</description>
   <dependencies>
+    <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-client</artifactId>
+        <version>${hbase.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-core</artifactId>
