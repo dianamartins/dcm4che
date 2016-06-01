@@ -40,7 +40,9 @@ package org.dcm4che3.tool.dcmqrscp;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -93,6 +95,14 @@ import org.dcm4che3.util.StringUtils;
 import org.dcm4che3.util.UIDUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.HTableInterface;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -127,6 +137,8 @@ public class DcmQRSCP<T extends InstanceLocator> {
     private DicomDirReader ddReader;
     private DicomDirWriter ddWriter;
     private HashMap<String, Connection> remoteConnections = new HashMap<String, Connection>();
+    private static boolean usingHBase;
+    private static Configuration confHBase;
     
     private final class CFindSCPImpl extends BasicCFindSCP {
 
@@ -195,8 +207,15 @@ public class DcmQRSCP<T extends InstanceLocator> {
             QueryRetrieveLevel level = withoutBulkData ? QueryRetrieveLevel.IMAGE
                     : QueryRetrieveLevel.valueOf(keys, qrLevels);
             level.validateRetrieveKeys(keys, rootLevel, relational(as, rq));
-            List<T> matches = DcmQRSCP.this
-                    .calculateMatches(keys);
+            List<T> matches;
+//            if (!usingHBase){
+//            	matches = DcmQRSCP.this
+//                        .calculateMatches(keys);
+//            }else{
+//            	matches = DcmQRSCP.this.calculateHBaseMatches(keys);
+//            }
+            matches = DcmQRSCP.this
+                .calculateMatches(keys);
             if (matches.isEmpty())
                 return null;
 
@@ -217,7 +236,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
         }
 
     }
-
+    
     private final class CMoveSCPImpl extends BasicCMoveSCP {
 
         private final String[] qrLevels;
@@ -450,7 +469,18 @@ public class DcmQRSCP<T extends InstanceLocator> {
         addStgCmtOptions(opts);
         addSendingPendingOptions(opts);
         addRemoteConnectionsOption(opts);
+        addHBaseConfig(opts);
         return CLIUtils.parseComandLine(args, opts, rb, DcmQRSCP.class);
+    }
+    
+    @SuppressWarnings("static-access")
+    private static void addHBaseConfig(Options opts) {
+    	opts.addOption(OptionBuilder.isRequired(false)
+    			.hasArgs()
+    			.withArgName("hbase")
+    			.withDescription("hbase configuration file")
+    			.withLongOpt("hbase")
+    			.create("f"));
     }
 
     @SuppressWarnings("static-access")
@@ -478,7 +508,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
     private static void addDicomDirOption(Options opts) {
         opts.addOption(OptionBuilder.hasArg().withArgName("file")
                 .withDescription(rb.getString("dicomdir"))
-                .withLongOpt("dicomdir").create());
+                .withLongOpt("dicomdir").create(null)); // added null to make this optional 
         opts.addOption(OptionBuilder.hasArg().withArgName("pattern")
                 .withDescription(rb.getString("filepath"))
                 .withLongOpt("filepath").create(null));
@@ -511,12 +541,23 @@ public class DcmQRSCP<T extends InstanceLocator> {
 
     public static void main(String[] args) {
         try {
+        	//String [] myargs = {"-b","DCMQRSCP:11113","--dicomdir","/Users/dianamartins/testat-getscu/DICOMDIR","--storage-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--retrieve-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--query-sop-classes","/Users/dianamartins/query-sop-classes.properties","--ae-config","/Users/dianamartins/ae.properties"}; 
             CommandLine cl = parseComandLine(args);
+            if (cl.hasOption("hbase")) {
+            	usingHBase = true;
+            	confHBase = new Configuration();
+            	confHBase.addResource(cl.getOptionValue("hbase"));
+            }else{
+            	usingHBase = false;
+            }
             DcmQRSCP<InstanceLocator> main = new DcmQRSCP<InstanceLocator>();
-            CLIUtils.configure(main.fsInfo, cl);
+            if (usingHBase==false){ // these steps are only made if we are not using hbase
+            	CLIUtils.configure(main.fsInfo, cl);
+            	configureDicomFileSet(main, cl); // this is only made if we are not in the default mode
+												// set dicomdir option as optional
+            }
             CLIUtils.configureBindServer(main.conn, main.ae, cl);
             CLIUtils.configure(main.conn, cl);
-            configureDicomFileSet(main, cl);
             configureTransferCapability(main, cl);
             configureInstanceAvailability(main, cl);
             configureStgCmt(main, cl);
@@ -679,62 +720,245 @@ public class DcmQRSCP<T extends InstanceLocator> {
     }
 
     public List<T> calculateMatches(Attributes keys)
-            throws DicomServiceException {
-        try {
-            List<T> list = new ArrayList<T>();
-            String[] patIDs = keys.getStrings(Tag.PatientID);
-            String[] studyIUIDs = keys.getStrings(Tag.StudyInstanceUID);
-            String[] seriesIUIDs = keys.getStrings(Tag.SeriesInstanceUID);
-            String[] sopIUIDs = keys.getStrings(Tag.SOPInstanceUID);
-            DicomDirReader ddr = ddReader;
-            Attributes patRec = ddr.findPatientRecord(patIDs);
-            while (patRec != null) {
-                Attributes studyRec = ddr.findStudyRecord(patRec, studyIUIDs);
-                while (studyRec != null) {
-                    Attributes seriesRec = ddr.findSeriesRecord(studyRec,
-                            seriesIUIDs);
-                    while (seriesRec != null) {
-                        Attributes instRec = ddr.findLowerInstanceRecord(
-                                seriesRec, true, sopIUIDs);
-                        while (instRec != null) {
-                            String cuid = instRec
-                                    .getString(Tag.ReferencedSOPClassUIDInFile);
-                            String iuid = instRec
-                                    .getString(Tag.ReferencedSOPInstanceUIDInFile);
-                            String tsuid = instRec
-                                    .getString(Tag.ReferencedTransferSyntaxUIDInFile);
-                            String[] fileIDs = instRec
-                                    .getStrings(Tag.ReferencedFileID);
-                            String uri = ddr.toFile(fileIDs).toURI().toString();
-                            list.add((T)new InstanceLocator(cuid, iuid, tsuid, uri));
-                            if (sopIUIDs != null && sopIUIDs.length == 1)
-                                break;
+    		throws DicomServiceException {
+    	try {
+    		System.out.println("***************Starting calculateMatches************");
+    		List<T> list = new ArrayList<T>();
+    		String[] patIDs = keys.getStrings(Tag.PatientID);
+    		String[] studyIUIDs = keys.getStrings(Tag.StudyInstanceUID);
+    		String[] seriesIUIDs = keys.getStrings(Tag.SeriesInstanceUID);
+    		String[] sopIUIDs = keys.getStrings(Tag.SOPInstanceUID);
+    		DicomDirReader ddr = ddReader;
+    		Attributes patRec = ddr.findPatientRecord(patIDs);
+    		while (patRec != null) {
+    			Attributes studyRec = ddr.findStudyRecord(patRec, studyIUIDs);
+    			while (studyRec != null) {
+    				Attributes seriesRec = ddr.findSeriesRecord(studyRec,
+    						seriesIUIDs);
+    				while (seriesRec != null) {
+    					Attributes instRec = ddr.findLowerInstanceRecord(
+    							seriesRec, true, sopIUIDs);
+    					while (instRec != null) {
+    						String cuid = instRec
+    								.getString(Tag.ReferencedSOPClassUIDInFile);
+    						String iuid = instRec
+    								.getString(Tag.ReferencedSOPInstanceUIDInFile);
+    						String tsuid = instRec
+    								.getString(Tag.ReferencedTransferSyntaxUIDInFile);
+    						String[] fileIDs = instRec
+    								.getStrings(Tag.ReferencedFileID);
+    						String uri = ddr.toFile(fileIDs).toURI().toString();
+    						list.add((T)new InstanceLocator(cuid, iuid, tsuid, uri));
+    						if (sopIUIDs != null && sopIUIDs.length == 1)
+    							break;
 
-                            instRec = ddr.findNextInstanceRecord(instRec, true,
-                                    sopIUIDs);
-                        }
-                        if (seriesIUIDs != null && seriesIUIDs.length == 1)
-                            break;
+    						instRec = ddr.findNextInstanceRecord(instRec, true,
+    								sopIUIDs);
+    					}
+    					if (seriesIUIDs != null && seriesIUIDs.length == 1)
+    						break;
 
-                        seriesRec = ddr.findNextSeriesRecord(seriesRec,
-                                seriesIUIDs);
-                    }
-                    if (studyIUIDs != null && studyIUIDs.length == 1)
-                        break;
+    					seriesRec = ddr.findNextSeriesRecord(seriesRec,
+    							seriesIUIDs);
+    				}
+    				if (studyIUIDs != null && studyIUIDs.length == 1)
+    					break;
 
-                    studyRec = ddr.findNextStudyRecord(studyRec, studyIUIDs);
-                }
-                if (patIDs != null && patIDs.length == 1)
-                    break;
+    				studyRec = ddr.findNextStudyRecord(studyRec, studyIUIDs);
+    			}
+    			if (patIDs != null && patIDs.length == 1)
+    				break;
 
-                patRec = ddr.findNextPatientRecord(patRec, patIDs);
-            }
-            return list;
-        } catch (IOException e) {
-            throw new DicomServiceException(
-                    Status.UnableToCalculateNumberOfMatches, e);
-        }
+    			patRec = ddr.findNextPatientRecord(patRec, patIDs);
+    		}
+    		return list;
+    	} catch (IOException e) {
+    		throw new DicomServiceException(
+    				Status.UnableToCalculateNumberOfMatches, e);
+    	}
     }
+    
+    // Método alterado
+//    public List<T> calculateMatches(Attributes keys)
+//    		throws DicomServiceException, IOException {
+//    	System.out.println("***************Starting calculateMatches************");
+//		List<T> list = new ArrayList<T>();
+//		String studyInstanceUID;
+//		String seriesInstanceUID;
+//		String SOPInstanceUID;
+//		String patientID;
+//		String patientName;
+//		String patientAge;
+//		String patientGender;
+//		String patientWeight;
+//		String patientHistory;
+//		String imageType;
+//		long imageDate;
+//		long imageHour;
+//		long studyDate;
+//		long studyHour;
+//		String studyDesc;
+//		String modality;
+//		String manufacturer;
+//		String institution;
+//		long seriesDate;
+//		long seriesHour;
+//		String referingPhysician;
+//		String seriesDesc;
+//		String transferSyntax;
+//		if (keys.contains(Tag.StudyInstanceUID)){
+//			studyInstanceUID = keys.getString(Tag.StudyInstanceUID);
+//		}else{
+//			studyInstanceUID = null;
+//		}
+//		if (keys.contains(Tag.SeriesInstanceUID)){
+//			seriesInstanceUID = keys.getString(Tag.SeriesInstanceUID);
+//		}else{
+//			seriesInstanceUID = null;
+//		}
+//		if (keys.contains(Tag.SOPInstanceUID)){
+//			SOPInstanceUID = keys.getString(Tag.SOPInstanceUID);
+//		}else{
+//			SOPInstanceUID = null;
+//		}
+//		if (keys.contains(Tag.PatientID)){
+//			patientID = keys.getString(Tag.PatientID);
+//		}else{
+//			patientID = null;
+//		}
+//		if (keys.contains(Tag.PatientName)){
+//			patientName = keys.getString(Tag.PatientName);
+//		}else{
+//			patientName = null;
+//		}
+//		if (keys.contains(Tag.PatientAge)){
+//			patientAge = keys.getString(Tag.PatientAge);
+//		}else{
+//			patientAge = null;
+//		}
+//		if (keys.contains(Tag.PatientSex)){
+//			patientGender = keys.getString(Tag.PatientSex);
+//		}else{
+//			patientGender = null;
+//		}
+//		if (keys.contains(Tag.PatientWeight)){
+//			patientWeight = keys.getString(Tag.PatientWeight);
+//		}else{
+//			patientWeight = null;
+//		}
+//		if (keys.contains(Tag.AdditionalPatientHistory)){
+//			patientHistory = keys.getString(Tag.AdditionalPatientHistory);
+//		}else{
+//			patientHistory = null;
+//		}
+//		if (keys.contains(Tag.ImageType)){
+//			imageType = keys.getString(Tag.ImageType);
+//		}else{
+//			imageType = null;
+//		}
+//		if (keys.contains(Tag.ContentDate)){
+//			imageDate = keys.getDate(Tag.ContentDate).getTime();
+//		}
+//		if (keys.contains(Tag.ContentTime)){
+//			try {
+//				imageHour = parseTime(keys.getString(Tag.ContentTime));
+//			} catch (java.text.ParseException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//		}
+//		if (keys.contains(Tag.StudyDate)){
+//			studyDate = keys.getDate(Tag.StudyDate).getTime();
+//		}
+//		if (keys.contains(Tag.StudyTime)){
+//			try {
+//				studyHour = parseTime(keys.getString(Tag.StudyTime));
+//			} catch (java.text.ParseException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//		}
+//		if (keys.contains(Tag.StudyDescription)){
+//			studyDesc = keys.getString(Tag.StudyDescription);
+//		}else{
+//			studyDesc = null;
+//		}
+//		if (keys.contains(Tag.Modality)){
+//			modality = keys.getString(Tag.Modality);
+//		}else{
+//			modality = null;
+//		}
+//		if (keys.contains(Tag.InstitutionName)){
+//			institution = keys.getString(Tag.InstitutionName);
+//		}else{
+//			institution = null;
+//		}
+//		if (keys.contains(Tag.ReferringPhysicianName)){
+//			referingPhysician = keys.getString(Tag.ReferringPhysicianName);
+//		}else{
+//			referingPhysician = null;
+//		}
+//		if (keys.contains(Tag.SeriesDate)){
+//			seriesDate = keys.getDate(Tag.SeriesDate).getTime();
+//		}
+//		if (keys.contains(Tag.SeriesTime)){
+//			try {
+//				seriesHour = parseTime(keys.getString(Tag.SeriesTime));
+//			} catch (java.text.ParseException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//		}
+//		if (keys.contains(Tag.SeriesDescription)){
+//			seriesDesc = keys.getString(Tag.SeriesDescription);
+//		}
+//		if (keys.contains(Tag.TransferSyntaxUID)){
+//			transferSyntax = keys.getString(Tag.TransferSyntaxUID);
+//		}else{
+//			transferSyntax = null;
+//		}
+//		
+//		HTableInterface tableInterface = new HTable (confHBase, "DicomTable");
+//		
+//		if (SOPInstanceUID != null){
+//			Get get = new Get (SOPInstanceUID.getBytes());
+//			get.addColumn("family".getBytes(),"qualifier".getBytes());
+//			Result res = tableInterface.get(get);
+//			byte[] storedValue = res.getValue("family".getBytes(), "qualifier".getBytes());
+//			InstanceLocator resInstance = new InstanceLocator(cuid, iuid, tsuid, uri);
+//		}
+//		
+//		if (patientName != null){
+//			Scan scan = new Scan();
+//			scan.addColumn("family".getBytes(), "qualifier".getBytes());
+//			ResultScanner scanner = tableInterface.getScanner(scan);
+//			for (Result res = scanner.next(); res != null; res = scanner.next()){
+//				byte[] value = res.getValue("family".getBytes(), "qualifier".getBytes());
+//				
+//			}
+//		}
+//		return list;
+//    }
+    
+    private long parseTime(String timeTag) throws java.text.ParseException{
+		int len = timeTag.length();
+		long mills;
+		if (len == 4){
+			timeTag = new StringBuffer(timeTag).insert(timeTag.length()-2, ":").toString();
+			timeTag = new StringBuffer(timeTag).insert(timeTag.length(), ":00").toString();	
+		}else if (len == 6){
+			timeTag = new StringBuffer(timeTag).insert(timeTag.length()-2, ":").toString();
+			timeTag = new StringBuffer(timeTag).insert(timeTag.length()-5, ":").toString();
+		}else if (len > 6){
+			timeTag = new StringBuffer(timeTag).insert(3, ":").toString();
+			timeTag = new StringBuffer(timeTag).insert(5, ":00").toString();
+		} //if none of these conditions are verified, it means that the time format is invalid
+		SimpleDateFormat formatter = new SimpleDateFormat("hh:mm:ss");
+		Date date = new Date();
+		date =(Date)formatter.parse(timeTag);
+		mills = date.getTime();
+		return mills;
+	}
     
     public Connection getConnection() {
         return conn;

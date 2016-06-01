@@ -332,6 +332,7 @@ public class GetSCU {
     @SuppressWarnings("unchecked")
     public static void main(String[] args) {
         try {
+        	//String [] myargs ={"-c","DCMQRSCP@localhost:11113","-m","StudyInstanceUID=1.2.840.113619.2.30.1.1762295590.1623.978668949.886","--store-tcs","/Users/dianamartins/store-tcs.properties"};
             CommandLine cl = parseComandLine(args);
             GetSCU main = new GetSCU();
             CLIUtils.configureConnect(main.remote, main.rq, cl);

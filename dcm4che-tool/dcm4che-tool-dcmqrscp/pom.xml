@@ -46,8 +46,16 @@
   </parent>
   <artifactId>dcm4che-tool-dcmqrscp</artifactId>
   <name>dcm4che-tool-dcmqrscp</name>
+  <properties>
+    <hbase.version>0.98.19-hadoop2</hbase.version>
+  </properties>
   <description>DICOM image archive</description>
   <dependencies>
+  <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-client</artifactId>
+        <version>${hbase.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.dcm4che</groupId>
       <artifactId>dcm4che-core</artifactId>

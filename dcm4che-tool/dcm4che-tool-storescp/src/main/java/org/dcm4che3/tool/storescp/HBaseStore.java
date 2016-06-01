@@ -241,9 +241,9 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 		if (!imageHour.equals(null)){
 			put.add(imageCf, "Time".getBytes(), Longs.toByteArray(imageHour));
 		}
-		System.out.println(tsuid);
+		//System.out.println(tsuid);
 		if (tsuid != null){
-			System.out.println("TS: "+tsuid);
+			//System.out.println("TS: "+tsuid);
 			put.add(imageCf, "TransferSyntax".getBytes(), tsuid.getBytes());
 		}
 		if (!studyUID.equals(null)){

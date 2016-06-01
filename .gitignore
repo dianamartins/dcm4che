@@ -3,5 +3,6 @@
 *.iml
 .settings/
 .idea/
+!/dcm4che-assembly/target/
 target/
 *.tmp

@@ -530,6 +530,7 @@ public class CLIUtils {
         if (p == null)
             p = new Properties();
         InputStream in = StreamUtils.openFileOrURL(url);
+//        InputStream in = StreamUtils.openFileOrURL("/Users/dianamartins/storage-sop-classes.properties");
         try {
             p.load(in);
         } finally {
