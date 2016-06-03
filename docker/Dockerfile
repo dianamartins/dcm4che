@@ -39,7 +39,6 @@ ENV CLASSPATH $CLASSPATH:/home/client/
 WORKDIR /home/
 
 
-#COPY configurations/log4j.properties /usr/local/hbase/hbase-0.98.19-hadoop2/lib/
 COPY configurations/* client/
 COPY client.sh client/
 #COPY *.jar /usr/local/hbase/hbase-0.98.19-hadoop2/lib/	
@@ -55,6 +54,13 @@ RUN tar xvjf dcmtk-3.6.0-linux-i686-static.tar.bz2
 RUN rm dcmtk-3.6.0-linux-i686-static.tar.bz2
 RUN mv dcmtk-3.6.0-linux-i686-static dcmtk
 
+ENV DCMDICTPATH /home/client/dcmtk/share/dcmtk/dicom.dic
+
+COPY configurations/image .
+COPY configurations/preferences.xml .
+COPY generateDataset.py .
+RUN mkdir replicas
+RUN python3 generateDataset.py preferences.xml
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && rm -rf /var/cache/oracle-jdk7-installer
 

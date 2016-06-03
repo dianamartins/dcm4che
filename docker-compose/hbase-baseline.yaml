@@ -1,5 +1,7 @@
 baseline:
     image: rogerp/baseline
+    ports:
+      - "60010:60010" # Master info web portal port
     hostname: baseline
     container_name: baseline
     net: ncwork

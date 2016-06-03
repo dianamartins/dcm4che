@@ -1,6 +1,6 @@
-storescp:
+storescu:
     image: dcm4che
     net: ncwork
     hostname: storescu
     container_name: storescu
-    command: "./dcm4che-3.3.8-SNAPSHOT/bin/storescu -c storescp@storescp:6262"
+    command: "./dcm4che-3.3.8-SNAPSHOT/bin/storescu -c storescp@storescp:6262 replicas"

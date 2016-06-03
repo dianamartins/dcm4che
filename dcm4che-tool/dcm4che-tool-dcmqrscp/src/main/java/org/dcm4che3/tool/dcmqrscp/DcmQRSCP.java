@@ -97,6 +97,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.primitives.Longs;
+import java.util.logging.Level;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -240,12 +241,16 @@ public class DcmQRSCP<T extends InstanceLocator> {
             QueryRetrieveLevel level = withoutBulkData ? QueryRetrieveLevel.IMAGE
                     : QueryRetrieveLevel.valueOf(keys, qrLevels);
             level.validateRetrieveKeys(keys, rootLevel, relational(as, rq));
-            List<T> matches;
+            List<T> matches = new ArrayList<T>();
             if (!usingHBase){
             	matches = DcmQRSCP.this
                         .calculateMatches(keys);
             }else{
-            	matches = DcmQRSCP.this.calculateHBaseMatches(keys);
+              try {
+                matches = DcmQRSCP.this.calculateHBaseMatches(keys);
+              } catch (IOException ex) {
+                LOG.debug(ex.getMessage());
+              }
             }
 //            matches = DcmQRSCP.this
 //                .calculateMatches(keys);

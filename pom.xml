@@ -115,6 +115,11 @@
                  <directory>dcm4che-assembly/target</directory>
                  <include>dcm4che-3.3.8-SNAPSHOT-bin.zip</include>
                </resource>
+               <resource>
+                  <targetPath>/</targetPath>
+                  <directory>GenerateDataset</directory>
+                  <include>generateDataset.py</include>
+               </resource>
             </resources>
           </configuration>
         </plugin>

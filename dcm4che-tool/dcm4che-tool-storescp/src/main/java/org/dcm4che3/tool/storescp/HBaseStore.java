@@ -158,6 +158,10 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 			imageType = fmi.getString(Tag.ImageType);
 		}
 		if (fmi.contains(Tag.ContentDate)){
+            System.out.println("inside content date");
+            System.out.println(Tag.ContentDate);
+            System.out.println(fmi);
+            System.out.println(fmi.getDate(Tag.ContentDate));
 			imageDate = fmi.getDate(Tag.ContentDate).getTime();
 		}
 		if(fmi.contains(Tag.ContentTime)){

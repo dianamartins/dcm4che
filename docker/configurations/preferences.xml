@@ -1,0 +1,6 @@
+<dataset>
+    <numreplicas>100</numreplicas>
+    <baseImage>/home/client/image</baseImage>
+    <replicasFolder>/home/client/replicas/</replicasFolder>
+    <dcmodify>/home/client/dcmtk/bin/dcmodify</dcmodify>
+</dataset>
