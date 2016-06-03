@@ -179,7 +179,10 @@ public class SingleJsonFileConfigurationStorage implements Configuration {
                 niceStackTrace = niceStackTrace.replace("\"", "\\\"");
                 String[] lines = niceStackTrace.split("\n");
                 // remove the exception line itself
-                niceStackTrace = String.join("\n", Arrays.copyOfRange(lines, 1, lines.length));
+                
+                for(String s:Arrays.copyOfRange(lines, 1, lines.length)){
+                  niceStackTrace += "\n" + s;
+                }
 
                 String commitMsg = "\"Changed path " + path + "\n" + niceStackTrace + "\"";
 

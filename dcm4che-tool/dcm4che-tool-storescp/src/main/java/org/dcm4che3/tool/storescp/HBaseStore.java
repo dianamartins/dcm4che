@@ -68,6 +68,7 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 		super();	
 		conf = new Configuration();
 		conf.addResource(file);
+        System.out.println("Configuration file is "+file);
 		admin = new HBaseAdmin(conf);
 	}
 	

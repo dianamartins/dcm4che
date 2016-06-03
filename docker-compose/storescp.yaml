@@ -1,0 +1,6 @@
+storescp:
+    image: dcm4che
+    net: ncwork
+    hostname: storescp
+    container_name: storescp
+    command: "./dcm4che-3.3.8-SNAPSHOT/bin/storescp -b storescp:6262 -f def-hbase-client.xml"
