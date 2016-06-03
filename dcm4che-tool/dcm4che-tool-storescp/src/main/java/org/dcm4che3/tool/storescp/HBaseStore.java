@@ -230,7 +230,7 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 			put.add(patientCf, "Weight".getBytes(), patientWeight.getBytes());
 		}
 		if (!patientHistory.equals(null)){
-			System.out.println("History: "+patientHistory);
+			//System.out.println("History: "+patientHistory);
 			put.add(patientCf, "MedicalHistory".getBytes(), patientHistory.getBytes());
 		}
 		if (!imageType.equals(null)){
@@ -248,7 +248,7 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 			put.add(imageCf, "TransferSyntax".getBytes(), tsuid.getBytes());
 		}
 		if (!studyUID.equals(null)){
-			System.out.println("studyUID: "+studyUID);
+			//System.out.println("studyUID: "+studyUID);
 			put.add(studyCf, "InstanceUID".getBytes(), studyUID.getBytes());
 		}
 		if (!studyDate.equals(null)){

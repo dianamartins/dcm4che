@@ -52,11 +52,15 @@ public class InstanceLocator implements Serializable {
     
     private static final long serialVersionUID = -5744253220472580137L;
 
-    public final String cuid;
-    public final String iuid;
-    public final String tsuid;
-    public final String uri;
+    public String cuid;
+    public String iuid;
+    public String tsuid;
+    public String uri;
     private Object obj;
+    
+    public InstanceLocator(){ //////
+    	super();
+    }
 
     public InstanceLocator(String cuid, String iuid, String tsuid, String uri) {
         this.cuid = cuid; //SOPClassUID
