@@ -1,5 +1,5 @@
 <dataset>
-    <numreplicas>1</numreplicas>
+    <numreplicas>50</numreplicas>
     <baseImage>/Users/dianamartins/1.2.276.0.7230010.3.1.4.0.2001.1461079064.595125</baseImage>
     <replicasFolder>/Users/dianamartins/apoio/</replicasFolder>
     <dcmodify>/Users/dianamartins/dcmtk-3.6.0-mac-binaries/bin/dcmodify</dcmodify>

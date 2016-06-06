@@ -6,6 +6,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
@@ -26,7 +27,10 @@ import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicCStoreSCP;
 import org.dcm4che3.net.service.DicomServiceException;
 
+
 import com.google.common.primitives.Longs;
+
+import hdfsclient.HDFSClient;
 
 public abstract class HBaseStore extends BasicCStoreSCP{
 	
@@ -63,11 +67,13 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 	Configuration conf;
 	private int status;
 	private String tsuid;
+	HDFSClient hdfsClient = new HDFSClient();
 	
 	public HBaseStore (String file) throws MasterNotRunningException, ZooKeeperConnectionException, IOException{
 		super();	
 		conf = new Configuration();
 		conf.addResource(file);
+		hdfsClient.setConf(file);
 		admin = new HBaseAdmin(conf);
 	}
 	
@@ -87,6 +93,7 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 		tsuid = pc.getTransferSyntax();
 
 		Attributes fmi = data.readDataset(tsuid);
+		
 		try {
 			createHBaseTable();
 		} catch (Exception e) {
@@ -218,15 +225,18 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 		}
 		if (!patientName.equals(null)){
 			put.add(patientCf, "Name".getBytes(), patientName.getBytes());
+			put.setAttribute("protected:" + "Patient" + ":Name", "".getBytes());
 		}
 		if (!patientBirthDate.equals(null)){
 			put.add(patientCf, "BirthDate".getBytes(), Longs.toByteArray(patientBirthDate));
+			put.setAttribute("protected:" + "Patient" + ":BirthDate", "".getBytes());
 		}
 		if (!patientGender.equals(null)){
 			put.add(patientCf, "Gender".getBytes(), patientGender.getBytes());
 		}
 		if (!patientWeight.equals(null)){
 			put.add(patientCf, "Weight".getBytes(), patientWeight.getBytes());
+			put.setAttribute("protected:" + "Patient" + ":Weight", "".getBytes());
 		}
 		if (!patientHistory.equals(null)){
 			//System.out.println("History: "+patientHistory);
@@ -276,9 +286,11 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 		}
 		if (!seriesInstitution.equals(null)){
 			put.add(seriesCf, "Institution".getBytes(), seriesInstitution.getBytes());
+			put.setAttribute("protected:"+"Series"+":Institution", "".getBytes());
 		}
 		if (!seriesRefPhysician.equals(null)){
 			put.add(seriesCf, "ReferingPhysician".getBytes(), seriesRefPhysician.getBytes());
+			put.setAttribute("protected:" + "Series" + ":ReferingPhysician", "".getBytes());
 		}
 		if (!seriesDescription.equals(null)){
 			put.add(seriesCf, "Description".getBytes(), seriesRefPhysician.getBytes());
@@ -309,6 +321,11 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 		}
 		mills = date.getTime();
 		return mills;
+	}
+	
+	private void insertIntoHDFS (PDVInputStream data,  String SOPInstanceUID) throws IOException{
+		byte[] image = IOUtils.toByteArray(data);
+		hdfsClient.putImage(SOPInstanceUID, image);
 	}
 
 }
