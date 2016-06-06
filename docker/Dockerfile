@@ -41,7 +41,7 @@ WORKDIR /home/
 
 COPY configurations/* client/
 COPY client.sh client/
-#COPY *.jar /usr/local/hbase/hbase-0.98.19-hadoop2/lib/	
+COPY *.jar /usr/local/hbase/hbase-0.98.19-hadoop2/lib/	
 
 COPY dcm4che-3.3.8-SNAPSHOT-bin.zip client/
 
@@ -60,6 +60,8 @@ COPY configurations/image .
 COPY configurations/preferences.xml .
 COPY generateDataset.py .
 RUN mkdir replicas
+RUN mkdir dicomdir
+RUN ./dcm4che-3.3.8-SNAPSHOT/bin/dcmdir -c dicomdir/DICOMDIR
 RUN python3 generateDataset.py preferences.xml
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && rm -rf /var/cache/oracle-jdk7-installer

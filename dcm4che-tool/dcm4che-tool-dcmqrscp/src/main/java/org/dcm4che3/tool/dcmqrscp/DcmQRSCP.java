@@ -251,6 +251,12 @@ public class DcmQRSCP<T extends InstanceLocator> {
               } catch (IOException ex) {
                 LOG.debug(ex.getMessage());
               }
+            	try {
+					matches = DcmQRSCP.this.calculateHBaseMatches(keys);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
             }
 //            matches = DcmQRSCP.this
 //                .calculateMatches(keys);
@@ -913,82 +919,83 @@ public class DcmQRSCP<T extends InstanceLocator> {
     		Get get = new Get (SOPInstanceUID.getBytes());
     		get.addColumn("family".getBytes(),"qualifier".getBytes());
     		Result res = tableInterface.get(get);
-    		byte[] storedValue = res.getValue("family".getBytes(), "qualifier".getBytes());
+    		String value = new String(res.getRow());
     		InstanceLocator resInstance = new InstanceLocator();
     		list.add((T) resInstance);
     	}else{
     		Scan scan = new Scan();
-    		
-    		if (patientName != null){
-    			filter = new SingleColumnValueFilter("Patient".getBytes(), "Name".getBytes(), CompareFilter.CompareOp.EQUAL, patientName.getBytes());
-    		}
     		if (patientBirthDate != null){
     			filter = new SingleColumnValueFilter("Patient".getBytes(), "BirthDate".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(patientBirthDate));
     		}
-    		if (patientID != null){
-    			filter = new SingleColumnValueFilter("Patient".getBytes(), "ID".getBytes(), CompareFilter.CompareOp.EQUAL, patientID.getBytes());
-    		}
-    		if (patientGender != null){
-    			filter = new SingleColumnValueFilter("Patient".getBytes(), "Gender".getBytes(), CompareFilter.CompareOp.EQUAL, patientGender.getBytes());
-    		}
-    		if (patientWeight != null){
-    			filter = new SingleColumnValueFilter("Patient".getBytes(), "Weight".getBytes(), CompareFilter.CompareOp.EQUAL, patientWeight.getBytes());
-    		}
-    		if (patientHistory != null){
-    			filter = new SingleColumnValueFilter("Patient".getBytes(), "MedicalHistory".getBytes(), CompareFilter.CompareOp.EQUAL, patientHistory.getBytes());
-    		}
-    		if (imageType != null){
-    			filter = new SingleColumnValueFilter("Image".getBytes(), "Type".getBytes(), CompareFilter.CompareOp.EQUAL, imageType.getBytes());
-    		}
-    		if (imageDate != null){
-    			filter = new SingleColumnValueFilter("Image".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(imageDate));
-    		}
-    		if (imageHour != null){
-    			filter = new SingleColumnValueFilter("Image".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(imageHour));
-    		}
-    		if (transferSyntax != null){
-    			filter = new SingleColumnValueFilter("Image".getBytes(), "TransferSyntax".getBytes(), CompareFilter.CompareOp.EQUAL, transferSyntax.getBytes());
-    		}
-    		if (studyInstanceUID != null){
-    			filter = new SingleColumnValueFilter("Study".getBytes(),"InstanceUID".getBytes(), CompareFilter.CompareOp.EQUAL, studyInstanceUID.getBytes());
-    		}
-    		if (studyDate != null){
-    			filter = new SingleColumnValueFilter("Study".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(studyDate));
-    		}
-    		if (studyHour != null){
-    			filter = new SingleColumnValueFilter("Study".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(studyHour));
-    		}
-    		if (studyDesc != null){
-    			filter = new SingleColumnValueFilter("Study".getBytes(), "Description".getBytes(), CompareFilter.CompareOp.EQUAL, studyDesc.getBytes());
-    		}
-    		if (seriesInstanceUID != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "InstanceUID".getBytes(), CompareFilter.CompareOp.EQUAL, seriesInstanceUID.getBytes());
-    		}
-    		if (seriesDate != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(seriesDate));
-    		}
-    		if (seriesHour != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(seriesHour));
-    		}
-    		if (modality != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "Modality".getBytes(), CompareFilter.CompareOp.EQUAL, modality.getBytes());
-    		}
-    		if (manufacturer != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "Manufacturer".getBytes(), CompareFilter.CompareOp.EQUAL, manufacturer.getBytes());
-    		}
-    		if (institution != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "Institution".getBytes(), CompareFilter.CompareOp.EQUAL, institution.getBytes());
-    		}
-    		if (referingPhysician != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "ReferingPhysician".getBytes(), CompareFilter.CompareOp.EQUAL, referingPhysician.getBytes());
-    		}
-    		if (seriesDesc != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "Description".getBytes(), CompareFilter.CompareOp.EQUAL, seriesDesc.getBytes());
-    		}
+    		scan.setAttribute("protected: "+"Patient" + ":BirthDate", "".getBytes());
+//    		if (patientName != null){
+//    			filter = new SingleColumnValueFilter("Patient".getBytes(), "Name".getBytes(), CompareFilter.CompareOp.EQUAL, patientName.getBytes());
+//    		}
+//    		if (patientID != null){
+//    			filter = new SingleColumnValueFilter("Patient".getBytes(), "ID".getBytes(), CompareFilter.CompareOp.EQUAL, patientID.getBytes());
+//    		}
+//    		if (patientGender != null){
+//    			filter = new SingleColumnValueFilter("Patient".getBytes(), "Gender".getBytes(), CompareFilter.CompareOp.EQUAL, patientGender.getBytes());
+//    		}
+//    		if (patientWeight != null){
+//    			filter = new SingleColumnValueFilter("Patient".getBytes(), "Weight".getBytes(), CompareFilter.CompareOp.EQUAL, patientWeight.getBytes());
+//    		}
+//    		if (patientHistory != null){
+//    			filter = new SingleColumnValueFilter("Patient".getBytes(), "MedicalHistory".getBytes(), CompareFilter.CompareOp.EQUAL, patientHistory.getBytes());
+//    		}
+//    		if (imageType != null){
+//    			filter = new SingleColumnValueFilter("Image".getBytes(), "Type".getBytes(), CompareFilter.CompareOp.EQUAL, imageType.getBytes());
+//    		}
+//    		if (imageDate != null){
+//    			filter = new SingleColumnValueFilter("Image".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(imageDate));
+//    		}
+//    		if (imageHour != null){
+//    			filter = new SingleColumnValueFilter("Image".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(imageHour));
+//    		}
+//    		if (transferSyntax != null){
+//    			filter = new SingleColumnValueFilter("Image".getBytes(), "TransferSyntax".getBytes(), CompareFilter.CompareOp.EQUAL, transferSyntax.getBytes());
+//    		}
+//    		if (studyInstanceUID != null){
+//    			filter = new SingleColumnValueFilter("Study".getBytes(),"InstanceUID".getBytes(), CompareFilter.CompareOp.EQUAL, studyInstanceUID.getBytes());
+//    		}
+//    		if (studyDate != null){
+//    			filter = new SingleColumnValueFilter("Study".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(studyDate));
+//    		}
+//    		if (studyHour != null){
+//    			filter = new SingleColumnValueFilter("Study".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(studyHour));
+//    		}
+//    		if (studyDesc != null){
+//    			filter = new SingleColumnValueFilter("Study".getBytes(), "Description".getBytes(), CompareFilter.CompareOp.EQUAL, studyDesc.getBytes());
+//    		}
+//    		if (seriesInstanceUID != null){
+//    			filter = new SingleColumnValueFilter("Series".getBytes(), "InstanceUID".getBytes(), CompareFilter.CompareOp.EQUAL, seriesInstanceUID.getBytes());
+//    		}
+//    		if (seriesDate != null){
+//    			filter = new SingleColumnValueFilter("Series".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(seriesDate));
+//    		}
+//    		if (seriesHour != null){
+//    			filter = new SingleColumnValueFilter("Series".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(seriesHour));
+//    		}
+//    		if (modality != null){
+//    			filter = new SingleColumnValueFilter("Series".getBytes(), "Modality".getBytes(), CompareFilter.CompareOp.EQUAL, modality.getBytes());
+//    		}
+//    		if (manufacturer != null){
+//    			filter = new SingleColumnValueFilter("Series".getBytes(), "Manufacturer".getBytes(), CompareFilter.CompareOp.EQUAL, manufacturer.getBytes());
+//    		}
+//    		if (institution != null){
+//    			filter = new SingleColumnValueFilter("Series".getBytes(), "Institution".getBytes(), CompareFilter.CompareOp.EQUAL, institution.getBytes());
+//    		}
+//    		if (referingPhysician != null){
+//    			filter = new SingleColumnValueFilter("Series".getBytes(), "ReferingPhysician".getBytes(), CompareFilter.CompareOp.EQUAL, referingPhysician.getBytes());
+//    		}
+//    		if (seriesDesc != null){
+//    			filter = new SingleColumnValueFilter("Series".getBytes(), "Description".getBytes(), CompareFilter.CompareOp.EQUAL, seriesDesc.getBytes());
+//    		}
     		scan.setFilter(filter);
+    		scan.addColumn("family".getBytes(), "qualifier".getBytes());
     		ResultScanner scanner = tableInterface.getScanner(scan);
     		for (Result res = scanner.next(); res != null; res = scanner.next()){
-    			byte[] value = res.getValue("family".getBytes(), "qualifier".getBytes());
+    			String value = new String(res.getRow());
     		}
     	}
     	return list;

@@ -120,6 +120,11 @@
                   <directory>GenerateDataset</directory>
                   <include>generateDataset.py</include>
                </resource>
+               <resource>
+                  <targetPath>/</targetPath>
+                    <directory>dcm4che-tool/dcm4che-tool-storescp/target/dependency</directory>
+                    <include>hdfsclient-1.0-SNAPSHOT.jar</include>
+                </resource>
             </resources>
           </configuration>
         </plugin>

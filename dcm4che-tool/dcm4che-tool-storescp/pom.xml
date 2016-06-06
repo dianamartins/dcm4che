@@ -78,5 +78,10 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
     </dependency>
+    <dependency>
+    	<groupId>1</groupId>
+    	<artifactId>hdfsclient</artifactId>
+    	<version>1.0-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 </project>
