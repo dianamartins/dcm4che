@@ -130,7 +130,7 @@ public class StoreSCP {
 
     public StoreSCP(CommandLine cl) throws IOException {
     	if (cl.hasOption("hbase")){
-    		cstoreSCP = new DefaultHBaseStore(cl.getOptionValue("hbase"));
+    		cstoreSCP = new DefaultHBaseStore(cl.getOptionValue("hbase"), cl.getOptionValue("directory", "."));
     	}else{
     		cstoreSCP = new DefaultStoreSCP();
     	}
