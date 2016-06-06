@@ -100,7 +100,6 @@ import com.google.common.primitives.Longs;
 import java.util.logging.Level;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.HTableInterface;
@@ -108,11 +107,8 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.CompareFilter;
-import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
 import org.apache.hadoop.hbase.filter.Filter;
-import org.apache.hadoop.hbase.filter.RegexStringComparator;
 import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
-import org.apache.hadoop.hbase.filter.ValueFilter;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -173,6 +169,8 @@ public class DcmQRSCP<T extends InstanceLocator> {
 	String seriesDesc;
 	String transferSyntax;
 	Filter filter;
+    
+    
     
     private final class CFindSCPImpl extends BasicCFindSCP {
 
@@ -586,7 +584,10 @@ public class DcmQRSCP<T extends InstanceLocator> {
     public static void main(String[] args) {
         try {
         	//String [] myargs = {"-b","DCMQRSCP:11113","--dicomdir","/Users/dianamartins/testat-getscu/DICOMDIR","--storage-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--retrieve-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--query-sop-classes","/Users/dianamartins/query-sop-classes.properties","--ae-config","/Users/dianamartins/ae.properties"}; 
-            CommandLine cl = parseComandLine(args);
+            //String [] myargs = {"-h"};
+            String [] myargs = {"-b","DCMQRSCP:11113","-f","/Users/dianamartins/def-hbase-client.xml", "--storage-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--retrieve-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--query-sop-classes","/Users/dianamartins/query-sop-classes.properties","--ae-config","/Users/dianamartins/ae.properties","--dicomdir","/Users/dianamartins/DICOMDIR"};
+        	CommandLine cl = parseComandLine(myargs);
+        	DcmQRSCP<InstanceLocator> main = new DcmQRSCP<InstanceLocator>();
             if (cl.hasOption("hbase")) {
             	usingHBase = true;
             	confHBase = new Configuration();
@@ -594,12 +595,11 @@ public class DcmQRSCP<T extends InstanceLocator> {
             }else{
             	usingHBase = false;
             }
-            DcmQRSCP<InstanceLocator> main = new DcmQRSCP<InstanceLocator>();
-            if (usingHBase==false){ // these steps are only made if we are not using hbase
+            //DcmQRSCP<InstanceLocator> main = new DcmQRSCP<InstanceLocator>();
+            if (usingHBase == false){
             	CLIUtils.configure(main.fsInfo, cl);
-            	configureDicomFileSet(main, cl); // this is only made if we are not in the default mode
-												// set dicomdir option as optional
             }
+            configureDicomFileSet(main, cl);
             CLIUtils.configureBindServer(main.conn, main.ae, cl);
             CLIUtils.configure(main.conn, cl);
             configureTransferCapability(main, cl);
@@ -651,49 +651,41 @@ public class DcmQRSCP<T extends InstanceLocator> {
                     .getOptionValue("pending-cmove")));
     }
 
-    private static void configureTransferCapability(DcmQRSCP<InstanceLocator> main,
-            CommandLine cl) throws IOException {
-        ApplicationEntity ae = main.ae;
-        EnumSet<QueryOption> queryOptions = cl.hasOption("relational") ? EnumSet
-                .of(QueryOption.RELATIONAL) : EnumSet.noneOf(QueryOption.class);
-        boolean storage = !cl.hasOption("no-storage") && main.isWriteable();
-        if (storage && cl.hasOption("all-storage")) {
-            TransferCapability tc = new TransferCapability(null, "*",
-                    TransferCapability.Role.SCP, "*");
-            tc.setQueryOptions(queryOptions);
-            ae.addTransferCapability(tc);
-        } else {
-            ae.addTransferCapability(new TransferCapability(null,
-                    UID.VerificationSOPClass, TransferCapability.Role.SCP,
-                    UID.ImplicitVRLittleEndian));
-            Properties storageSOPClasses = CLIUtils.loadProperties(cl
-                    .getOptionValue("storage-sop-classes",
-                            "resource:storage-sop-classes.properties"), null);
-            if (storage)
-                addTransferCapabilities(ae, storageSOPClasses,
-                        TransferCapability.Role.SCP, null);
-            if (!cl.hasOption("no-retrieve")) {
-                addTransferCapabilities(ae, storageSOPClasses,
-                        TransferCapability.Role.SCU, null);
-                Properties p = CLIUtils.loadProperties(cl.getOptionValue(
-                        "retrieve-sop-classes",
-                        "resource:retrieve-sop-classes.properties"), null);
-                addTransferCapabilities(ae, p, TransferCapability.Role.SCP,
-                        queryOptions);
-            }
-            if (!cl.hasOption("no-query")) {
-                Properties p = CLIUtils.loadProperties(cl.getOptionValue(
-                        "query-sop-classes",
-                        "resource:query-sop-classes.properties"), null);
-                addTransferCapabilities(ae, p, TransferCapability.Role.SCP,
-                        queryOptions);
-            }
-        }
-        if (storage)
-            main.openDicomDir();
-        else
-            main.openDicomDirForReadOnly();
-    }
+	private static void configureTransferCapability(DcmQRSCP<InstanceLocator> main, CommandLine cl) throws IOException {
+		ApplicationEntity ae = main.ae;
+
+		EnumSet<QueryOption> queryOptions = cl.hasOption("relational") ? EnumSet.of(QueryOption.RELATIONAL)
+				: EnumSet.noneOf(QueryOption.class);
+			boolean storage = !cl.hasOption("no-storage") && main.isWriteable();
+			if (storage && cl.hasOption("all-storage")) {
+				TransferCapability tc = new TransferCapability(null, "*", TransferCapability.Role.SCP, "*");
+				tc.setQueryOptions(queryOptions);
+				ae.addTransferCapability(tc);
+			} else {
+				ae.addTransferCapability(new TransferCapability(null, UID.VerificationSOPClass,
+						TransferCapability.Role.SCP, UID.ImplicitVRLittleEndian));
+				Properties storageSOPClasses = CLIUtils.loadProperties(
+						cl.getOptionValue("storage-sop-classes", "resource:storage-sop-classes.properties"), null);
+				if (storage)
+					addTransferCapabilities(ae, storageSOPClasses, TransferCapability.Role.SCP, null);
+				if (!cl.hasOption("no-retrieve")) {
+					addTransferCapabilities(ae, storageSOPClasses, TransferCapability.Role.SCU, null);
+					Properties p = CLIUtils.loadProperties(
+							cl.getOptionValue("retrieve-sop-classes", "resource:retrieve-sop-classes.properties"),
+							null);
+					addTransferCapabilities(ae, p, TransferCapability.Role.SCP, queryOptions);
+				}
+				if (!cl.hasOption("no-query")) {
+					Properties p = CLIUtils.loadProperties(
+							cl.getOptionValue("query-sop-classes", "resource:query-sop-classes.properties"), null);
+					addTransferCapabilities(ae, p, TransferCapability.Role.SCP, queryOptions);
+				}
+			}
+			if (storage)
+				main.openDicomDir();
+			else
+				main.openDicomDirForReadOnly();
+	}
 
     private static void addTransferCapabilities(ApplicationEntity ae,
             Properties p, TransferCapability.Role role,
@@ -766,7 +758,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
     public List<T> calculateMatches(Attributes keys)
     		throws DicomServiceException {
     	try {
-    		System.out.println("***************Starting calculateMatches************");
+    		//System.out.println("***************Starting calculateMatches************");
     		List<T> list = new ArrayList<T>();
     		String[] patIDs = keys.getStrings(Tag.PatientID);
     		String[] studyIUIDs = keys.getStrings(Tag.StudyInstanceUID);

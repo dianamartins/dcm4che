@@ -1,5 +1,5 @@
 proxies:
-    image: proxies
+    image: dcm4che
     net: ncwork
     hostname: proxies
     container_name: proxies

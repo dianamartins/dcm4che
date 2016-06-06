@@ -41,7 +41,7 @@ WORKDIR /home/
 
 COPY configurations/* client/
 COPY client.sh client/
-COPY *.jar /usr/local/hbase/hbase-0.98.19-hadoop2/lib/	
+#COPY *.jar /usr/local/hbase/hbase-0.98.19-hadoop2/lib/	
 
 COPY dcm4che-3.3.8-SNAPSHOT-bin.zip client/
 

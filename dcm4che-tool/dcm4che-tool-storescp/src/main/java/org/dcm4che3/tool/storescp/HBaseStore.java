@@ -1,12 +1,13 @@
 package org.dcm4che3.tool.storescp;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
@@ -26,8 +27,6 @@ import org.dcm4che3.net.service.BasicCStoreSCP;
 
 
 import com.google.common.primitives.Longs;
-import hdfsclient.HDFSClient;
-
 
 public abstract class HBaseStore extends BasicCStoreSCP{
 	
@@ -64,15 +63,15 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 	Configuration conf;
 	private int status;
 	private String tsuid;
-	private final HDFSClient hdfsClient;
+	//HDFSClient hdfsClient = new HDFSClient();
+	private String storageDir;
 	
-	public HBaseStore (String file) throws MasterNotRunningException, ZooKeeperConnectionException, IOException{
+	public HBaseStore (String file, String storageDir) throws MasterNotRunningException, ZooKeeperConnectionException, IOException{
 		super();	
 		conf = new Configuration();
 		conf.addResource(file);
-        System.out.println("Going to connect to hdfs");
-		hdfsClient = new HDFSClient(conf);
 		admin = new HBaseAdmin(conf);
+		this.storageDir = storageDir;
 	}
 	
 	public void setStatus(int status){
@@ -91,6 +90,9 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 
 		Attributes fmi = data.readDataset(tsuid);
 		
+		OutputStream out = new FileOutputStream(fmi.getString(Tag.SOPInstanceUID));
+		data.copyTo(out);
+		
 		try {
 			createHBaseTable();
 		} catch (Exception e) {
@@ -98,6 +100,7 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 			e.printStackTrace();
 		}
 		fillTable(fmi);
+		
 	}
 		
 	
@@ -317,9 +320,9 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 		return mills;
 	}
 	
-	private void insertIntoHDFS (PDVInputStream data,  String SOPInstanceUID) throws IOException{
-		byte[] image = IOUtils.toByteArray(data);
-		hdfsClient.putImage(SOPInstanceUID, image);
-	}
+//	private void insertIntoHDFS (PDVInputStream data,  String SOPInstanceUID) throws IOException{
+//		byte[] image = IOUtils.toByteArray(data);
+//		hdfsClient.putImage(SOPInstanceUID, image);
+//	}
 
 }

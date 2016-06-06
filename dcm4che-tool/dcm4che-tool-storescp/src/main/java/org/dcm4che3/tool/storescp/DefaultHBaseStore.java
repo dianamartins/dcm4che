@@ -10,8 +10,8 @@ import org.apache.hadoop.hbase.client.HTableInterface;
 
 public class DefaultHBaseStore extends HBaseStore{
 
-	public DefaultHBaseStore(String file) throws MasterNotRunningException, ZooKeeperConnectionException, IOException {
-		super(file);
+	public DefaultHBaseStore(String file, String storageDir) throws MasterNotRunningException, ZooKeeperConnectionException, IOException {
+		super(file,storageDir);
 		// TODO Auto-generated constructor stub
 	}
 

@@ -1,8 +1,0 @@
-hdfs:
-    image: cloudera/quickstart:latest
-    ports:
-      - "8020:8020" # Master info web portal port
-    hostname: hdfs
-    container_name: hdfs
-    net: ncwork
-    command: "/usr/bin/docker-quickstart & tail -f /var/log/hadoop-hdfs/*"
