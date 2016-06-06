@@ -82,7 +82,6 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 			Attributes rq, PDVInputStream data, Attributes rsp)
 					throws IOException {
 		rsp.setInt(Tag.Status, VR.US, status);
-
 		String cuid = rq.getString(Tag.AffectedSOPClassUID);
 		String iuid = rq.getString(Tag.AffectedSOPInstanceUID);
 		tsuid = pc.getTransferSyntax();
@@ -158,10 +157,6 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 			imageType = fmi.getString(Tag.ImageType);
 		}
 		if (fmi.contains(Tag.ContentDate)){
-            System.out.println("inside content date");
-            System.out.println(Tag.ContentDate);
-            System.out.println(fmi);
-            System.out.println(fmi.getDate(Tag.ContentDate));
 			imageDate = fmi.getDate(Tag.ContentDate).getTime();
 		}
 		if(fmi.contains(Tag.ContentTime)){
@@ -234,7 +229,6 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 			put.add(patientCf, "Weight".getBytes(), patientWeight.getBytes());
 		}
 		if (!patientHistory.equals(null)){
-			//System.out.println("History: "+patientHistory);
 			put.add(patientCf, "MedicalHistory".getBytes(), patientHistory.getBytes());
 		}
 		if (!imageType.equals(null)){
@@ -246,13 +240,11 @@ public abstract class HBaseStore extends BasicCStoreSCP{
 		if (!imageHour.equals(null)){
 			put.add(imageCf, "Time".getBytes(), Longs.toByteArray(imageHour));
 		}
-		//System.out.println(tsuid);
-		if (tsuid != null){
-			//System.out.println("TS: "+tsuid);
+
+        if (tsuid != null){
 			put.add(imageCf, "TransferSyntax".getBytes(), tsuid.getBytes());
 		}
 		if (!studyUID.equals(null)){
-			//System.out.println("studyUID: "+studyUID);
 			put.add(studyCf, "InstanceUID".getBytes(), studyUID.getBytes());
 		}
 		if (!studyDate.equals(null)){
