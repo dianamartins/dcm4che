@@ -270,8 +270,8 @@ public class StoreSCP {
 
     public static void main(String[] args) {
         try {
-        	//String [] myargs = {"-b","STORESCP:11115"}; 
-            CommandLine cl = parseComandLine(args);
+        	String [] myargs = {"-b","STORESCP:11115","-f","def-hbase-client.xml","--directory","/Users/dianamartins/recebidasHBaseSCP"}; 
+            CommandLine cl = parseComandLine(myargs);
             StoreSCP main = new StoreSCP(cl);
             CLIUtils.configureBindServer(main.conn, main.ae, cl);
             CLIUtils.configure(main.conn, cl);
