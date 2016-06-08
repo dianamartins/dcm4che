@@ -44,6 +44,7 @@ import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Properties;
 import java.util.ResourceBundle;
@@ -136,6 +137,7 @@ public class GetSCU {
     private Attributes keys = new Attributes();
     private int[] inFilter = DEF_IN_FILTER;
     private Association as;
+    private static ArrayList <Long> timers;
 
     private BasicCStoreSCP storageSCP = new BasicCStoreSCP("*") {
 
@@ -143,6 +145,8 @@ public class GetSCU {
         protected void store(Association as, PresentationContext pc, Attributes rq,
                 PDVInputStream data, Attributes rsp)
                 throws IOException {
+        	timers = new ArrayList <Long>();
+        	System.out.println("***********Starting store**************");
             if (storageDir == null)
                 return;
 
@@ -151,8 +155,15 @@ public class GetSCU {
             String tsuid = pc.getTransferSyntax();
             File file = new File(storageDir, iuid );
             try {
+            	long t1,t2;
+            	t1 = System.nanoTime();
+            	System.out.println("************Starting storeTo******");
                 storeTo(as, as.createFileMetaInformation(iuid, cuid, tsuid),
                         data, file);
+                System.out.println("************Ending storeTo ***************");
+                t2 = System.nanoTime();
+                long total = t2 - t1;
+                timers.add(total);
             } catch (Exception e) {
                 throw new DicomServiceException(Status.ProcessingFailure, e);
             }
@@ -352,12 +363,14 @@ public class GetSCU {
             main.device.setScheduledExecutor(scheduledExecutorService);
             try {
                 main.open();
-                List<String> argList = cl.getArgList();
+                List<String> argList = cl.getArgList(); // retrieve unrecognized options
                 if (argList.isEmpty())
-                    main.retrieve();
-                else
-                    for (String arg : argList)
+                    main.retrieve(); //this is the most common
+                else{
+                    for (String arg : argList){
                         main.retrieve(new File(arg));
+                    }
+                }
             } finally {
                 main.close();
                 executorService.shutdown();
@@ -488,7 +501,13 @@ public class GetSCU {
     }
     
     private void retrieve(Attributes keys, DimseRSPHandler rspHandler) throws IOException, InterruptedException {
+//    	timers = new ArrayList <Long> ();
+//    	long t1 = System.nanoTime();
+    	System.out.println("***************Setting C-GET****************");
         as.cget(model.getCuid(), priority, keys, null, rspHandler);
+//        long t2 = System.nanoTime();
+//        long total = t2 - t1;
+//        timers.add(total);
     }
 
 }

@@ -43,11 +43,13 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
@@ -119,6 +121,8 @@ public class StoreSCU {
     private long totalSize;
     private int filesScanned;
     private int filesSent;
+    private static ArrayList <Long> timers;
+    private static String resultsFile = "Users/dianamartins/results/resultsSTORESCU.txt";
 
     private RSPHandlerFactory rspHandlerFactory = new RSPHandlerFactory() {
 
@@ -317,6 +321,36 @@ public class StoreSCU {
             e.printStackTrace();
             System.exit(2);
         }
+        File results = new File(resultsFile);
+        if (!results.exists()){
+        	try {
+				results.createNewFile();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
+        FileWriter fw = null;
+		try {
+			fw = new FileWriter(results.getAbsoluteFile());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		BufferedWriter bw = new BufferedWriter(fw);
+		
+		if (timers != null){
+			for (int i = 0; i < timers.size(); i++){
+				try {
+					bw.append(timers.get(i).toString());
+					bw.newLine();
+					bw.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
     }
 
     public static String uidSuffixOf(CommandLine cl) {
@@ -379,14 +413,19 @@ public class StoreSCU {
     public void sendFiles() throws IOException {
         BufferedReader fileInfos = new BufferedReader(new InputStreamReader(
                 new FileInputStream(tmpFile)));
+        timers = new ArrayList <Long>();
         try {
             String line;
             while (as.isReadyForDataTransfer()
                     && (line = fileInfos.readLine()) != null) {
                 String[] ss = StringUtils.split(line, '\t');
                 try {
+                	long t1 = System.nanoTime();
                     send(new File(ss[4]), Long.parseLong(ss[3]), ss[1], ss[0],
                             ss[2]);
+                    long t2 = System.nanoTime();
+                    long total = t2 - t1;
+                    timers.add(total);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

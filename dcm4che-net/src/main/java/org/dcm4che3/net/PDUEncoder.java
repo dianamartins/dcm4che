@@ -419,7 +419,7 @@ class PDUEncoder extends PDVOutputStream {
                 new DicomOutputStream(this, UID.ImplicitVRLittleEndian);
             cmdout.writeCommand(cmd);
             cmdout.close();
-            if (dataWriter != null) {
+            if (dataWriter != null) { //usually is null
                 if (!as.isPackPDV()) {
                     as.writePDataTF();
                 } else {
