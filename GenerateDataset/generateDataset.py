@@ -93,7 +93,7 @@ def generate_dataset (num_replicas, image_path, replicas_folder, dcmodify):
         execute_command(ImageType_m + random.choice(image_type_v1) + "\\" + random.choice(image_type_v2) + " " + replicas_folder + i)
         execute_command(ImageDate_m + str(random.randint(1998, 2016)) + str(random.randint(1, 12)).zfill(2) +
                         str(random.randint(1, 28)).zfill(2) + " " + replicas_folder + i)
-        execute_command(ImageHour_m + str(random.randint(8, 23)).zfill(0) + str(random.randint(0, 59)).zfill(2) +
+        execute_command(ImageHour_m + str(random.randint(8, 23)).zfill(2) + str(random.randint(0, 59)).zfill(2) +
                         str(random.randint(0, 59)).zfill(2) + " " + replicas_folder + i)
         execute_command(StudyDescription_m + random.choice(description) + " " + replicas_folder + i)
         execute_command(Modality_m + random.choice(modality) + " " + replicas_folder + i)
@@ -101,13 +101,13 @@ def generate_dataset (num_replicas, image_path, replicas_folder, dcmodify):
         execute_command(Institution_m + "INSTITUTION" + str(counter) + " " + replicas_folder + i)
         execute_command(SeriesDate_m + str(random.randint(1998, 2016)) + str(random.randint(1, 12)).zfill(2) +
                         str(random.randint(1, 28)).zfill(2) + " " + replicas_folder + i)
-        execute_command(SeriesHour_m + str(random.randint(8, 23)).zfill(0) + str(random.randint(0, 59)).zfill(2) +
+        execute_command(SeriesHour_m + str(random.randint(8, 23)).zfill(2) + str(random.randint(0, 59)).zfill(2) +
                         str(random.randint(0, 59)).zfill(2) + " " + replicas_folder + i)
         execute_command(SeriesDescription_m + random.choice(description) + " " + replicas_folder + i)
         execute_command(ReferingPysician_m + "PHYSICIAN" + str(counter) + " " + replicas_folder + i)
         execute_command(StudyDate_m + str(random.randint(1998, 2016)) + str(random.randint(1, 12)).zfill(2) +
                         str(random.randint(1, 28)).zfill(2) + " " + replicas_folder + i)
-        execute_command(StudyHour_m + str(random.randint(8, 23)).zfill(0) + str(random.randint(0, 59)).zfill(2) +
+        execute_command(StudyHour_m + str(random.randint(8, 23)).zfill(2) + str(random.randint(0, 59)).zfill(2) +
                         str(random.randint(0, 59)).zfill(2) + " " + replicas_folder + i)
         counter += 1
 
