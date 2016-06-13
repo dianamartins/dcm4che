@@ -16,6 +16,7 @@ import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Put;
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.DatasetWithFMI;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
@@ -32,6 +33,8 @@ import org.dcm4che3.util.AttributesFormat;
 import org.dcm4che3.util.SafeClose;
 
 import com.google.common.primitives.Longs;
+import java.math.BigInteger;
+import pt.uminho.haslab.safecloudclient.shareclient.SharedAdmin;
 
 
 public abstract class HBaseStore extends BasicCStoreSCP {
@@ -64,21 +67,24 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 	private String seriesInstitution;
 	private String seriesRefPhysician;
 	private String seriesDescription;
-	private final HBaseAdmin admin;
-	private HTableInterface tableInterface;
+	//private final HBaseAdmin admin;
+	private final SharedAdmin admin;
+    private HTableInterface tableInterface;
 	Configuration conf;
 	private int status;
 	private String tsuid;
 	// HDFSClient hdfsClient = new HDFSClient();
-	private String storageDir;
+	private final String storageDir;
 	private AttributesFormat filePathFormat;
+	private static File imagePath;
 
 	public HBaseStore(String file, String storageDir)
 			throws MasterNotRunningException, ZooKeeperConnectionException, IOException {
 		super("*");
 		conf = new Configuration();
 		conf.addResource(file);
-		admin = new HBaseAdmin(conf);
+        System.out.println("Settings are " + file + ":"+storageDir);
+		admin = new SharedAdmin(conf);
 		this.storageDir = storageDir;
 	}
 
@@ -90,11 +96,9 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 	protected void store(Association as, PresentationContext pc, Attributes rq, PDVInputStream data, Attributes rsp)
 			throws IOException {
 		rsp.setInt(Tag.Status, VR.US, status);
-		String cuid = rq.getString(Tag.AffectedSOPClassUID);
-		String iuid = rq.getString(Tag.AffectedSOPInstanceUID);
-
-		// String cuid = rq.getString(Tag.AffectedSOPClassUID);
+		//String cuid = rq.getString(Tag.AffectedSOPClassUID);
 		//String iuid = rq.getString(Tag.AffectedSOPInstanceUID);
+
 		tsuid = pc.getTransferSyntax();
 
 		//Attributes fmi = data.readDataset(tsuid);
@@ -105,6 +109,10 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 		// out.close();
 
 		saveImage(as, pc, rq, data, Commands.mkCStoreRSP(rq, Status.Success));
+		
+		DicomInputStream dis = new DicomInputStream (imagePath);
+		DatasetWithFMI dataWithFMI = dis.readDatasetWithFMI();
+		Attributes fmi = dataWithFMI.getDataset();
 
 		try {
 			createHBaseTable();
@@ -112,7 +120,7 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		//fillTable(fmi);
+		fillTable(fmi);
 
 	}
 
@@ -139,8 +147,9 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 		table.addFamily(studyFamily);
 
 		System.out.println("*************checking table********");
-		if (!admin.tableExists(tableName)) {
-			System.out.println("*************creating table**********");
+		//if (!admin.tableExists(tableName)) {
+         if(!admin.tableExits(tableName)){
+            System.out.println("*************creating table**********");
 			admin.createTable(table);
 			System.out.println("**************table created**************");
 		}
@@ -223,6 +232,7 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 		}
 
 		String key = SOPInstanceUID;
+		System.out.println("*****************key: " + key);
 
 		byte[] patientCf = "Patient".getBytes();
 		byte[] imageCf = "Image".getBytes();
@@ -238,7 +248,9 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 			put.add(patientCf, "Name".getBytes(), patientName.getBytes());
 			put.setAttribute("protected:" + "Patient" + ":Name", "".getBytes());
 		}
-		if (!patientBirthDate.equals(null)) {
+		if (!patientBirthDate.equals(null)) 
+        {
+           System.out.println("BirthDate "+this.patientBirthDate);
 			put.add(patientCf, "BirthDate".getBytes(), Longs.toByteArray(patientBirthDate));
 			put.setAttribute("protected:" + "Patient" + ":BirthDate", "".getBytes());
 		}
@@ -246,6 +258,9 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 			put.add(patientCf, "Gender".getBytes(), patientGender.getBytes());
 		}
 		if (!patientWeight.equals(null)) {
+           System.out.println("patientWeight "+this.patientWeight);
+          
+           System.out.println("patientWeight "+new BigInteger(this.patientWeight.getBytes()));
 			put.add(patientCf, "Weight".getBytes(), patientWeight.getBytes());
 			put.setAttribute("protected:" + "Patient" + ":Weight", "".getBytes());
 		}
@@ -268,7 +283,6 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 			put.add(imageCf, "TransferSyntax".getBytes(), tsuid.getBytes());
 		}
 		if (!studyUID.equals(null)) {
-			// System.out.println("studyUID: "+studyUID);
 			put.add(studyCf, "InstanceUID".getBytes(), studyUID.getBytes());
 		}
 		if (!studyDate.equals(null)) {
@@ -296,10 +310,15 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 			put.add(seriesCf, "Manufacturer".getBytes(), seriesManufacturer.getBytes());
 		}
 		if (!seriesInstitution.equals(null)) {
+            System.out.println("The instituition "+this.seriesInstitution);
+            System.out.println("Intituition "+new BigInteger(this.seriesInstitution.getBytes()));
+
 			put.add(seriesCf, "Institution".getBytes(), seriesInstitution.getBytes());
 			put.setAttribute("protected:" + "Series" + ":Institution", "".getBytes());
 		}
 		if (!seriesRefPhysician.equals(null)) {
+            System.out.println("The ref physician "+this.seriesRefPhysician);
+            System.out.println("ReferingPhysician "+new BigInteger(this.seriesRefPhysician.getBytes()));
 			put.add(seriesCf, "ReferingPhysician".getBytes(), seriesRefPhysician.getBytes());
 			put.setAttribute("protected:" + "Series" + ":ReferingPhysician", "".getBytes());
 		}
@@ -348,20 +367,6 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 	private void saveImage(Association as, PresentationContext pc, Attributes rq, PDVInputStream data, Attributes rsp)
 			throws IOException {
 
-		// File file = new File(storageDir + "/" + iuid);
-		//
-		// OutputStream out = new FileOutputStream(file);
-		// if (!file.exists()){
-		// file.createNewFile();
-		// }
-		//
-		// byte [] byteContent = IOUtils.toByteArray(data);
-		//
-		// out.write(byteContent);
-		// out.flush();
-		//
-		// out.close();
-
 		if (storageDir == null)
 			return;
 
@@ -392,22 +397,15 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 		}
 	}
 
+	
 	private static void renameTo(Association as, File from, File dest) throws IOException {
+		imagePath = dest;
 		if (!dest.getParentFile().mkdirs())
 			dest.delete();
 		if (!from.renameTo(dest))
 			throw new IOException("Failed to rename " + from + " to " + dest);
 	}
-
-//	private static void configureStorageDirectory(StoreSCP main, CommandLine cl) {
-//		if (!cl.hasOption("ignore")) {
-//			main.setStorageDirectory(
-//					new File(cl.getOptionValue("directory", ".")));
-//			if (cl.hasOption("filepath")){
-//				main.setStorageFilePathFormat(cl.getOptionValue("filepath"));
-//			}
-//		}
-//		}
+	
 
 	private static Attributes parse(File file) throws IOException {
 			DicomInputStream in = new DicomInputStream(file);

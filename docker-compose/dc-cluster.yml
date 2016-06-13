@@ -1,0 +1,32 @@
+cluster1:
+    image: saferegions
+    ports:
+        - "60010:60010" # Master info web portal port
+        - "60000:60000" # Master port for client to connect
+        - "16262:16262" # Zookeeper port for the client to connect
+    net: ncwork
+    hostname: cluster1
+    container_name: cluster1
+    command: "-s 0 6262 cluster2 6262 6272 6272 60000 16262"
+
+cluster2:
+    image: saferegions
+    ports:
+        - "60020:60010"
+        - "61000:61000"
+        - "17262:17262"
+    net: ncwork
+    hostname: cluster2
+    container_name: cluster2
+    command: "-s 1 6262 cluster3 6262 6272 6272 61000 17262"
+
+cluster3:
+    image: saferegions
+    ports:
+        - "60030:60010"
+        - "62000:62000"
+        - "18262:18262"
+    net: ncwork
+    hostname: cluster3
+    container_name: cluster3
+    command: "-s 2 6262 cluster1 6262 6272 6272 62000 18262"

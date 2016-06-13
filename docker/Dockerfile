@@ -34,13 +34,15 @@ ENV HBASE_HOME /usr/local/hbase/hbase-0.98.19-hadoop2
 ENV CLASSPATH /usr/local/hbase/hbase-0.98.19-hadoop2/lib/*
 ENV CLASSPATH $CLASSPATH:/usr/local/hadoop/hadoop-2.7.2/lib/*
 ENV CLASSPATH $CLASSPATH:/usr/local/hadoop/hadoop-2.7.2/lib/*
-ENV CLASSPATH $CLASSPATH:/home/client/
+ENV CLASSPATH $CLASSPATH:/home/client
 
 WORKDIR /home/
 
 
 COPY configurations/* client/
 COPY client.sh client/
+COPY proxies.sh client/
+
 #COPY *.jar /usr/local/hbase/hbase-0.98.19-hadoop2/lib/	
 
 COPY dcm4che-3.3.8-SNAPSHOT-bin.zip client/
@@ -57,12 +59,18 @@ RUN mv dcmtk-3.6.0-linux-i686-static dcmtk
 ENV DCMDICTPATH /home/client/dcmtk/share/dcmtk/dicom.dic
 
 COPY configurations/image .
-COPY configurations/preferences.xml .
-COPY generateDataset.py .
+COPY configurations/temp_preferences.xml .
 RUN mkdir replicas
 RUN mkdir dicomdir
 RUN ./dcm4che-3.3.8-SNAPSHOT/bin/dcmdir -c dicomdir/DICOMDIR
-RUN python3 generateDataset.py preferences.xml
+COPY generateDataset.py .
+COPY key .
+COPY safecloudclient-1.0-SNAPSHOT.jar /usr/local/hbase/hbase-0.98.19-hadoop2/lib/
+COPY simplecrypto-1.0-SNAPSHOT.jar /usr/local/hbase/hbase-0.98.19-hadoop2/lib/
+COPY smpc-1.0-SNAPSHOT.jar /usr/local/hbase/hbase-0.98.19-hadoop2/lib/
+
+RUN cp def-hbase-client.xml client.xml
+RUN cp hbase-client.xml share-client.xml
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && rm -rf /var/cache/oracle-jdk7-installer
 

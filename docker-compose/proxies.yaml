@@ -3,4 +3,4 @@ proxies:
     net: ncwork
     hostname: proxies
     container_name: proxies
-    command: "./client.sh"
+    command: "./proxies.sh"

@@ -130,8 +130,14 @@ public class StoreSCP {
 
     public StoreSCP(CommandLine cl) throws IOException {
     	if (cl.hasOption("hbase")){
-    		cstoreSCP = new DefaultHBaseStore(cl.getOptionValue("hbase"), cl.getOptionValue("directory", "."));
-    	}else{
+          String config  = cl.getOptionValue("hbase");
+          String dir = cl.getOptionValue("directory", ".");
+          System.out.println("Config " + config );
+          System.out.println("Directory "+ dir);
+    		//cstoreSCP = new DefaultHBaseStore(cl.getOptionValue("hbase"), cl.getOptionValue("directory", "."));
+            //cstoreSCP = new SymHBaseStore(config, dir);
+            cstoreSCP = new ShareHBaseStore(config, dir);
+        } else {
     		cstoreSCP = new DefaultStoreSCP();
     	}
     	device.setDimseRQHandler(createServiceRegistry());

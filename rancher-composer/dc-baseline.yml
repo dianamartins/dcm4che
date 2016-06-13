@@ -1,0 +1,4 @@
+baseline:
+    image: rogerp/baseline
+    hostname: baseline
+    container_name: baseline

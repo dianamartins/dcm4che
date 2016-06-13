@@ -1,0 +1,5 @@
+proxies:
+    image: rogerp/dcm4che:latest
+    hostname: proxies
+    container_name: proxies
+    command: "./proxies.sh"

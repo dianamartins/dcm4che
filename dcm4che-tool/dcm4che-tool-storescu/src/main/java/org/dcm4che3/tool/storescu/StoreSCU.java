@@ -42,6 +42,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -122,7 +123,7 @@ public class StoreSCU {
     private int filesScanned;
     private int filesSent;
     private static ArrayList <Long> timers;
-    private static String resultsFile = "Users/dianamartins/results/resultsSTORESCU.txt";
+    private static final String resultsFile = "results/resultsSTORESCU.txt";
 
     private RSPHandlerFactory rspHandlerFactory = new RSPHandlerFactory() {
 
@@ -244,7 +245,7 @@ public class StoreSCU {
     }
 
     @SuppressWarnings("unchecked")
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException, IOException {
         long t1, t2;
         try {
             CommandLine cl = parseComandLine(args);
@@ -321,35 +322,24 @@ public class StoreSCU {
             e.printStackTrace();
             System.exit(2);
         }
-        File results = new File(resultsFile);
-        if (!results.exists()){
-        	try {
-				results.createNewFile();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-        }
-        FileWriter fw = null;
-		try {
-			fw = new FileWriter(results.getAbsoluteFile());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		BufferedWriter bw = new BufferedWriter(fw);
-		
+		File fout = new File(resultsFile);
+		FileOutputStream fos = new FileOutputStream(fout);
+		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+        
 		if (timers != null){
 			for (int i = 0; i < timers.size(); i++){
 				try {
-					bw.append(timers.get(i).toString());
+					bw.append(""+timers.get(i));
 					bw.newLine();
-					bw.close();
 				} catch (IOException e) {
+                  System.out.println(e);
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
+            bw.flush();
+         	bw.close();
+
 		}
     }
 

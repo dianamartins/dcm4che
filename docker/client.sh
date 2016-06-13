@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-./dcm4che-3.3.8-SNAPSHOT/bin/dcmqrscp -b dcmqrscp:6262 -f def-hbase-client.xml --dicomdir dicomdir/DICOMDIR > query.log &
-./dcm4che-3.3.8-SNAPSHOT/bin/storescp -b storescp:6263 -f def-hbase-client.xml --directory dicomdir > store.log &
-#./dcm4che-3.3.8-SNAPSHOT/bin/storescp -b storescp:6263 --directory dicomdir > store.log &
-tail -f *.log
+nimages=$1
+echo "nunber of images"
+echo $nimages
+cp temp_preferences.xml preferences.xml
+sed -i "s/NIMAGES/$nimages/g" preferences.xml
+python3 generateDataset.py preferences.xml
+./dcm4che-3.3.8-SNAPSHOT/bin/storescu -c storescp@proxies:6263 replicas

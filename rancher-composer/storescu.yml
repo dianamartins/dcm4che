@@ -1,0 +1,7 @@
+storescu:
+    image: rogerp/dcm4che:latest
+    hostname: storescu
+    container_name: storescu
+    volumes:
+      - /home/gsd/put/sf:/home/client/results
+    command: "./client.sh <IMAGES>"

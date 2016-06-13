@@ -12,7 +12,6 @@ public class DefaultHBaseStore extends HBaseStore{
 
 	public DefaultHBaseStore(String file, String storageDir) throws MasterNotRunningException, ZooKeeperConnectionException, IOException {
 		super(file,storageDir);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
