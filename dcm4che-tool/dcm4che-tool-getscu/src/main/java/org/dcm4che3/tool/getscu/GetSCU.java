@@ -343,8 +343,8 @@ public class GetSCU {
     @SuppressWarnings("unchecked")
     public static void main(String[] args) {
         try {
-        	//String [] myargs ={"-c","DCMQRSCP@localhost:11113","-m","StudyInstanceUID=1.2.840.113619.2.30.1.1762295590.1623.978668949.886","--store-tcs","/Users/dianamartins/store-tcs.properties"};
-            CommandLine cl = parseComandLine(args);
+        	String [] myargs ={"-c","DCMQRSCP@localhost:11113","-m","StudyInstanceUID=1.2.276.0.7230010.3.1.2.0.15505.1464966667.701007","--store-tcs","/Users/dianamartins/store-tcs.properties"};
+            CommandLine cl = parseComandLine(myargs);
             GetSCU main = new GetSCU();
             CLIUtils.configureConnect(main.remote, main.rq, cl);
             CLIUtils.configureBind(main.conn, main.ae, cl);
@@ -501,13 +501,14 @@ public class GetSCU {
     }
     
     private void retrieve(Attributes keys, DimseRSPHandler rspHandler) throws IOException, InterruptedException {
-//    	timers = new ArrayList <Long> ();
-//    	long t1 = System.nanoTime();
+    	timers = new ArrayList <Long> ();
+    	long t1 = System.nanoTime();
     	System.out.println("***************Setting C-GET****************");
+    	System.out.println("********************CUID: " + model.getCuid());
         as.cget(model.getCuid(), priority, keys, null, rspHandler);
-//        long t2 = System.nanoTime();
-//        long total = t2 - t1;
-//        timers.add(total);
+        long t2 = System.nanoTime();
+        long total = t2 - t1;
+        timers.add(total);
     }
 
 }
