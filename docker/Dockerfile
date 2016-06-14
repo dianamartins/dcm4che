@@ -71,6 +71,7 @@ COPY smpc-1.0-SNAPSHOT.jar /usr/local/hbase/hbase-0.98.19-hadoop2/lib/
 
 RUN cp def-hbase-client.xml client.xml
 RUN cp hbase-client.xml share-client.xml
+COPY query.sh .
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && rm -rf /var/cache/oracle-jdk7-installer
 

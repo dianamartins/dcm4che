@@ -1,6 +1,6 @@
 getscu:
-    image: getscu
+    image: dcm4che
     net: ncwork
     hostname: getscu
-    container_name: dcmqrscp
-    #command: "./dcm4che-3.3.8-SNAPSHOT/bin/getscu -c dcmqrscp@dcmqrscp:6262 -m <QUERY> -L <LEVEL>"
+    container_name: getscu
+    command: "./query.sh"

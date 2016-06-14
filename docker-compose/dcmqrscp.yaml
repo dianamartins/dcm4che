@@ -1,5 +1,5 @@
 dcmqrscp:
-    image: dcmqrscp
+    image: dcm4che
     net: ncwork
     hostname: dcmqrscp
     container_name: dcmqrscp

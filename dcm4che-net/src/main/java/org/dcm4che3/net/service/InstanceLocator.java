@@ -57,10 +57,7 @@ public class InstanceLocator implements Serializable {
     public String tsuid;
     public String uri;
     private Object obj;
-    
-    public InstanceLocator(){ //////
-    	super();
-    }
+
 
     public InstanceLocator(String cuid, String iuid, String tsuid, String uri) {
         this.cuid = cuid; //SOPClassUID
