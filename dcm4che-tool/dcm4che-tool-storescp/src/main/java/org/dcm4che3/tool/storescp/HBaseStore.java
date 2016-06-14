@@ -102,12 +102,12 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 	@Override
 	protected void store(Association as, PresentationContext pc, Attributes rq, PDVInputStream data, Attributes rsp)
 			throws IOException {
-		rsp.setInt(Tag.Status, VR.US, status);
+		
 
 		tsuid = pc.getTransferSyntax();
 
 		saveImage(as, pc, rq, data, Commands.mkCStoreRSP(rq, Status.Success));
-		
+		rsp.setInt(Tag.Status, VR.US, status);
 		DicomInputStream dis = new DicomInputStream (imagePath);
 		DatasetWithFMI dataWithFMI = dis.readDatasetWithFMI();
 		Attributes fmi = dataWithFMI.getDataset();
@@ -229,7 +229,6 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 		}
 
 		String key = SOPInstanceUID;
-		System.out.println("*****************key: " + key);
 
 		byte[] patientCf = "Patient".getBytes();
 		byte[] imageCf = "Image".getBytes();
@@ -275,7 +274,6 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 			put.add(imageCf, "TransferSyntax".getBytes(), tsuid.getBytes());
 		}
 		if (!studyUID.equals(null)) {
-			// System.out.println("studyUID: "+studyUID);
 			put.add(studyCf, "InstanceUID".getBytes(), studyUID.getBytes());
 		}
 		if (!studyDate.equals(null)) {
@@ -313,6 +311,7 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 		if (!seriesDescription.equals(null)) {
 			put.add(seriesCf, "Description".getBytes(), seriesRefPhysician.getBytes());
 		}
+		
 		tableInterface.put(put);
 	}
 
