@@ -38,7 +38,9 @@
 
 package org.dcm4che3.tool.getscu;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
@@ -137,7 +139,9 @@ public class GetSCU {
     private Attributes keys = new Attributes();
     private int[] inFilter = DEF_IN_FILTER;
     private Association as;
-    private static ArrayList <Long> timers;
+    private static ArrayList <Long> timers = new ArrayList <Long>();
+    private static Long t1;
+    private static String resultsFile = "Users/dianamartins/results/resultsGETSCU.txt";
 
     private BasicCStoreSCP storageSCP = new BasicCStoreSCP("*") {
 
@@ -145,25 +149,15 @@ public class GetSCU {
         protected void store(Association as, PresentationContext pc, Attributes rq,
                 PDVInputStream data, Attributes rsp)
                 throws IOException {
-        	timers = new ArrayList <Long>();
-        	System.out.println("***********Starting store**************");
             if (storageDir == null)
                 return;
-
             String iuid = rq.getString(Tag.AffectedSOPInstanceUID);
             String cuid = rq.getString(Tag.AffectedSOPClassUID);
             String tsuid = pc.getTransferSyntax();
             File file = new File(storageDir, iuid );
             try {
-            	long t1,t2;
-            	t1 = System.nanoTime();
-            	System.out.println("************Starting storeTo******");
                 storeTo(as, as.createFileMetaInformation(iuid, cuid, tsuid),
                         data, file);
-                System.out.println("************Ending storeTo ***************");
-                t2 = System.nanoTime();
-                long total = t2 - t1;
-                timers.add(total);
             } catch (Exception e) {
                 throw new DicomServiceException(Status.ProcessingFailure, e);
             }
@@ -221,6 +215,9 @@ public class GetSCU {
         } finally {
             SafeClose.close(out);
         }
+        long t2 = System.nanoTime();
+        long total = t2 - t1;
+        timers.add(total); 
     }
 
     private DicomServiceRegistry createServiceRegistry() {
@@ -343,8 +340,7 @@ public class GetSCU {
     @SuppressWarnings("unchecked")
     public static void main(String[] args) {
         try {
-        	//String [] myargs ={"-c","DCMQRSCP@localhost:11113","-m","StudyInstanceUID=1.2.276.0.7230010.3.1.2.0.15505.1464966667.701007","--store-tcs","/Users/dianamartins/store-tcs.properties"};
-            CommandLine cl = parseComandLine(args);
+        	CommandLine cl = parseComandLine(args);
             GetSCU main = new GetSCU();
             CLIUtils.configureConnect(main.remote, main.rq, cl);
             CLIUtils.configureBind(main.conn, main.ae, cl);
@@ -386,6 +382,36 @@ public class GetSCU {
             e.printStackTrace();
             System.exit(2);
         }
+        File results = new File(resultsFile);
+        if (!results.exists()){
+        	try {
+				results.createNewFile();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
+        FileWriter fw = null;
+		try {
+			fw = new FileWriter(results.getAbsoluteFile());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		BufferedWriter bw = new BufferedWriter(fw);
+		
+		if (timers != null){
+			for (int i = 0; i < timers.size(); i++){
+				try {
+					bw.append(timers.get(i).toString());
+					bw.newLine();
+					bw.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
     }
 
     private static void configureServiceClass(GetSCU main, CommandLine cl)
@@ -502,14 +528,8 @@ public class GetSCU {
     }
     
     private void retrieve(Attributes keys, DimseRSPHandler rspHandler) throws IOException, InterruptedException {
-    	timers = new ArrayList <Long> ();
-    	long t1 = System.nanoTime();
-    	System.out.println("***************Setting C-GET****************");
-    	System.out.println("********************CUID: " + model.getCuid());
+    	t1 = System.nanoTime();
         as.cget(model.getCuid(), priority, keys, null, rspHandler);
-        long t2 = System.nanoTime();
-        long total = t2 - t1;
-        timers.add(total);
     }
 
 }
