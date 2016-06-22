@@ -67,13 +67,13 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 	private String seriesInstitution;
 	private String seriesRefPhysician;
 	private String seriesDescription;
-	private final HBaseAdmin admin;
-	//private final SharedAdmin admin;
+	//private final HBaseAdmin admin;
+	private final SharedAdmin admin;
     private HTableInterface tableInterface;
 	Configuration conf;
 	private int status;
 	private String tsuid;
-	// HDFSClient hdfsClient = new HDFSClient();
+	//HDFSClient hdfsClient = new HDFSClient();
 	private final String storageDir;
 	private AttributesFormat filePathFormat;
 	private static File imagePath;
@@ -84,8 +84,8 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 		conf = new Configuration();
 		conf.addResource(file);
         System.out.println("Settings are " + file + ":"+storageDir);
-          admin = new HBaseAdmin(conf);
-        //admin = new SharedAdmin(conf);
+        //admin = new HBaseAdmin(conf);
+        admin = new SharedAdmin(conf);
 		this.storageDir = storageDir;
 	}
 
@@ -145,8 +145,8 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 		table.addFamily(studyFamily);
 
 		System.out.println("*************checking table********");
-		if (!admin.tableExists(tableName)) {
-        //if(!admin.tableExits(tableName)){
+		//if (!admin.tableExists(tableName)) {
+        if(!admin.tableExits(tableName)){
             System.out.println("*************creating table**********");
 			admin.createTable(table);
 			System.out.println("**************table created**************");

@@ -8,7 +8,6 @@ import random
 
 def execute_command(command):
     bash_command = command.split(" ")
-    print(bash_command)
     subprocess.call(bash_command)
 
 
@@ -20,7 +19,6 @@ def generate_dataset (num_replicas, image_path, replicas_folder, dcmodify):
     for i in range(num_replicas):
         # if i.endswith("/"):
             shutil.copy2(image_path, replicas_folder + str(i+1) + '.dcm')
-            print("Replicado!")
         # else:
           #   shutil.copy2(image_path, replicas_folder + "/" + str(i+1) + ".dcm")
             # print("Replicado!")
@@ -79,7 +77,9 @@ def generate_dataset (num_replicas, image_path, replicas_folder, dcmodify):
     image_type_v2 = ["PRIMARY", "SECONDARY"]
 
     counter = 1
-    for i in os.listdir(path=replicas_folder):
+    for j in range(num_replicas):
+        i = str(j+1) + ".dcm"
+        print i
         execute_command(SeriesInstanceUID_m + replicas_folder + i)
         execute_command(StudyInstanceUID_m + replicas_folder + i)
         execute_command(SOPInstanceUID_m + replicas_folder + i)

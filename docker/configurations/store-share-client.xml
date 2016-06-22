@@ -36,7 +36,7 @@
     </property>  
     <property>
         <name>smhbase.nbits</name>
-        <value>140</value>
+        <value>160</value>
         <description> 
             On the client the values are being
             generated with a parameter of 63 bits. On the

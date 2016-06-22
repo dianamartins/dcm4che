@@ -3,4 +3,8 @@ getscu:
     net: ncwork
     hostname: getscu
     container_name: getscu
-    command: "./query.sh"
+    volumes:
+      - /home/roger/Documents/Projects/dcm4che/replicas:/home/client/replicas
+      - /home/roger/Documents/Projects/dcm4che/results:/home/client/results
+    command: "./query.sh 10"
+

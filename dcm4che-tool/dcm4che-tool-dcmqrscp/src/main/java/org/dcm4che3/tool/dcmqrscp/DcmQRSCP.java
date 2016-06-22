@@ -99,11 +99,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.primitives.Longs;
-import java.util.logging.Level;
+import java.io.FileNotFoundException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.NoSuchPaddingException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
@@ -111,7 +114,8 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.CompareFilter;
 import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
-
+import pt.uminho.haslab.safecloudclient.shareclient.PrivateColumnsSharedTable;
+import pt.uminho.haslab.smhbase.exceptions.InvalidNumberOfBits;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
@@ -248,15 +252,17 @@ public class DcmQRSCP<T extends InstanceLocator> {
             }else{
               try {
                 matches = DcmQRSCP.this.calculateHBaseMatches(keys);
-              } catch (IOException ex) {
+              } catch (Exception ex) {
                 LOG.debug(ex.getMessage());
-              }
+              } 
             	try {
 					matches = DcmQRSCP.this.calculateHBaseMatches(keys);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				}
+				} catch (Exception ex) {
+                  LOG.debug(ex.getMessage());
+                } 
             }
 //            matches = DcmQRSCP.this
 //                .calculateMatches(keys);
@@ -828,7 +834,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
     
     // Método alterado
     public List<T> calculateHBaseMatches(Attributes keys)
-    		throws DicomServiceException, IOException {
+    		throws DicomServiceException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, FileNotFoundException, InvalidAlgorithmParameterException, InvalidNumberOfBits {
     	List<T> list = new ArrayList<T>();
  
     	if (keys.contains(Tag.StudyInstanceUID)){
@@ -916,11 +922,18 @@ public class DcmQRSCP<T extends InstanceLocator> {
     		manufacturer = keys.getString(Tag.Manufacturer);
     	}
 
-    	HTableInterface tableInterface = new HTable (confHBase, "DicomTable");
+    	//HTableInterface tableInterface = new HTable (confHBase, "DicomTable");
+        //HTableInterface tableInterface = new SymColTable(confHBase, "DircomTable");
+       HTableInterface tableInterface =  new PrivateColumnsSharedTable(confHBase, "DicomTable");
 
-    	if (SOPInstanceUID != null){
+        if (SOPInstanceUID != null){
     		Get get = new Get (SOPInstanceUID.getBytes());
+            LOG.debug("GETXY instance UID "+ SOPInstanceUID);
+            get.setAttribute("protected: "+"Patient" + ":BirthDate", "".getBytes());
+            get.setAttribute("protected: " + "Patient" + ":Name", "".getBytes());
+
     		Result res = tableInterface.get(get);
+            LOG.debug("DATD The result of value is "+ res.getRow());
     		String value = new String(res.getRow());
     		if (value != null){
     			DicomInputStream dis = new DicomInputStream (new File(imagesFolder + "/" + value));
@@ -1017,6 +1030,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
         		list.add((T) resInstance);
     		}
     	}
+        tableInterface.close();
     	return list;
     }
     
