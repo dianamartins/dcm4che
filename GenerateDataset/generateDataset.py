@@ -11,7 +11,7 @@ def execute_command(command):
     subprocess.call(bash_command)
 
 
-def generate_dataset (num_replicas, image_path, replicas_folder, dcmodify):
+def generate_dataset (num_replicas, num_fixed_weight, image_path, replicas_folder, dcmodify):
 
     for i in os.listdir(path=replicas_folder):
         os.remove(replicas_folder + i)
@@ -79,7 +79,7 @@ def generate_dataset (num_replicas, image_path, replicas_folder, dcmodify):
     counter = 1
     for j in range(num_replicas):
         i = str(j+1) + ".dcm"
-        print i
+        print (i)
         execute_command(SeriesInstanceUID_m + replicas_folder + i)
         execute_command(StudyInstanceUID_m + replicas_folder + i)
         execute_command(SOPInstanceUID_m + replicas_folder + i)
@@ -88,7 +88,15 @@ def generate_dataset (num_replicas, image_path, replicas_folder, dcmodify):
         execute_command(PatientName_m + "PATIENT" + str(counter) + " " + replicas_folder + i)
         execute_command(PatientAge_m + str(random.randint(10, 80)) + " " + replicas_folder + i)
         execute_command(PatientGender_m + random.choice(gender) + " " + replicas_folder + i)
-        execute_command(PatientWeight_m + str(random.randint(20, 120)) + " " + replicas_folder + i)
+        
+        if counter < (num_fixed_weight+1) :
+            execute_command(PatientWeight_m + str(70) + " " + replicas_folder + i)
+        else :
+            value = random.randint(20,120)
+            if value == 70:
+                value = value+1
+            execute_command(PatientWeight_m + str(value) + " " + replicas_folder + i)
+        
         execute_command(PatientHistory_m + random.choice(history) + " " + replicas_folder + i)
         execute_command(ImageType_m + random.choice(image_type_v1) + "\\" + random.choice(image_type_v2) + " " + replicas_folder + i)
         execute_command(ImageDate_m + str(random.randint(1998, 2016)) + str(random.randint(1, 12)).zfill(2) +
@@ -119,8 +127,10 @@ def generate_dataset (num_replicas, image_path, replicas_folder, dcmodify):
 if __name__ == '__main__':
     cl_parser = argparse.ArgumentParser(description='Give preferences.xml')
     cl_parser.add_argument('file', help='preferences file', type=str)
+    cl_parser.add_argument('num_fixed_weight', help='number of images with weight=70kg', type=int)
     args = cl_parser.parse_args()
     preferences_file = args.file
+    num_fixed_weight = args.num_fixed_weight
 
     tree = ET.parse(preferences_file)
     replicas = tree.find("numreplicas").text
@@ -129,4 +139,4 @@ if __name__ == '__main__':
     replicas_folder = tree.find("replicasFolder").text
     dcmodify = tree.find("dcmodify").text
 
-    generate_dataset(num_replicas, base_image, replicas_folder, dcmodify)
+    generate_dataset(num_replicas, num_fixed_weight, base_image, replicas_folder, dcmodify)
