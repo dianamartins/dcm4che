@@ -1,0 +1,16 @@
+<configuration>
+    <!--The default HBase client uses the def-hbase-site configuration -->
+    <property>
+        <name>hbase.zookeeper.quorum</name>
+        <value>192.168.112.80</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.property.clientPort</name>
+        <value>2181</value>
+    </property>
+     <property>
+    <!--  <name>hbase.master.hostname</name>
+    <value>cloud89.cluster.lsd.di.uminho.pt.local</value> -->
+    <!-- master.local is the DNS name in my network pointing to hbase master -->
+  </property>
+</configuration>
