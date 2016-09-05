@@ -6,7 +6,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.HTableInterface;
-import pt.uminho.haslab.safecloudclient.shareclient.PrivateColumnsSharedTable;
+//import pt.uminho.haslab.safecloudclient.shareclient.PrivateColumnsSharedTable;
 
 
 public class ShareHBaseStore extends HBaseStore {
@@ -17,7 +17,8 @@ public class ShareHBaseStore extends HBaseStore {
 
   @Override
   public HTableInterface createTableInterface(Configuration conf, String tableName) throws Exception {
-    return new PrivateColumnsSharedTable(conf, tableName);
+ //   return new PrivateColumnsSharedTable(conf, tableName);
+  return null;
   }
   
 }
