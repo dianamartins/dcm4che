@@ -107,6 +107,7 @@ import javax.crypto.NoSuchPaddingException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
@@ -114,8 +115,8 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.CompareFilter;
 import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
-import pt.uminho.haslab.safecloudclient.shareclient.PrivateColumnsSharedTable;
-import pt.uminho.haslab.smhbase.exceptions.InvalidNumberOfBits;
+//import pt.uminho.haslab.safecloudclient.shareclient.PrivateColumnsSharedTable;
+//import pt.uminho.haslab.smhbase.exceptions.InvalidNumberOfBits;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
@@ -834,43 +835,43 @@ public class DcmQRSCP<T extends InstanceLocator> {
     
     // Método alterado
     public List<T> calculateHBaseMatches(Attributes keys)
-    		throws DicomServiceException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, FileNotFoundException, InvalidAlgorithmParameterException, InvalidNumberOfBits {
+    		throws DicomServiceException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, FileNotFoundException, InvalidAlgorithmParameterException { //throw InvalidNumberOfBits
     	List<T> list = new ArrayList<T>();
  
     	if (keys.contains(Tag.StudyInstanceUID)){
     		studyInstanceUID = keys.getString(Tag.StudyInstanceUID);
     	}
-    	if (keys.contains(Tag.SeriesInstanceUID)){
+    	else if (keys.contains(Tag.SeriesInstanceUID)){
     		seriesInstanceUID = keys.getString(Tag.SeriesInstanceUID);
     	}
-    	if (keys.contains(Tag.SOPInstanceUID)){
+    	else if (keys.contains(Tag.SOPInstanceUID)){
     		SOPInstanceUID = keys.getString(Tag.SOPInstanceUID);
     	}
-    	if (keys.contains(Tag.PatientID)){
+    	else if (keys.contains(Tag.PatientID)){
     		patientID = keys.getString(Tag.PatientID);
     	}
-    	if (keys.contains(Tag.PatientName)){
+    	else if (keys.contains(Tag.PatientName)){
     		patientName = keys.getString(Tag.PatientName);
     	}
-    	if (keys.contains(Tag.PatientBirthDate)){
+    	else if (keys.contains(Tag.PatientBirthDate)){
     		patientBirthDate = keys.getDate(Tag.PatientBirthDate).getTime();
     	}
-    	if (keys.contains(Tag.PatientSex)){
+    	else if (keys.contains(Tag.PatientSex)){
     		patientGender = keys.getString(Tag.PatientSex);
     	}
-    	if (keys.contains(Tag.PatientWeight)){
+    	else if (keys.contains(Tag.PatientWeight)){
     		patientWeight = keys.getString(Tag.PatientWeight);
     	}
-    	if (keys.contains(Tag.AdditionalPatientHistory)){
+    	else if (keys.contains(Tag.AdditionalPatientHistory)){
     		patientHistory = keys.getString(Tag.AdditionalPatientHistory);
     	}
-    	if (keys.contains(Tag.ImageType)){
+    	else if (keys.contains(Tag.ImageType)){
     		imageType = keys.getString(Tag.ImageType);
     	}
-    	if (keys.contains(Tag.ContentDate)){
+    	else if (keys.contains(Tag.ContentDate)){
     		imageDate = keys.getDate(Tag.ContentDate).getTime();
     	}
-    	if (keys.contains(Tag.ContentTime)){
+    	else if (keys.contains(Tag.ContentTime)){
     		try {
     			imageHour = parseTime(keys.getString(Tag.ContentTime));
     		} catch (java.text.ParseException e) {
@@ -878,10 +879,10 @@ public class DcmQRSCP<T extends InstanceLocator> {
     			e.printStackTrace();
     		}
     	}
-    	if (keys.contains(Tag.StudyDate)){
+    	else if (keys.contains(Tag.StudyDate)){
     		studyDate = keys.getDate(Tag.StudyDate).getTime();
     	}
-    	if (keys.contains(Tag.StudyTime)){
+    	else if (keys.contains(Tag.StudyTime)){
     		try {
     			studyHour = parseTime(keys.getString(Tag.StudyTime));
     		} catch (java.text.ParseException e) {
@@ -889,22 +890,22 @@ public class DcmQRSCP<T extends InstanceLocator> {
     			e.printStackTrace();
     		}
     	}
-    	if (keys.contains(Tag.StudyDescription)){
+    	else if (keys.contains(Tag.StudyDescription)){
     		studyDesc = keys.getString(Tag.StudyDescription);
     	}
-    	if (keys.contains(Tag.Modality)){
+    	else if (keys.contains(Tag.Modality)){
     		modality = keys.getString(Tag.Modality);
     	}
-    	if (keys.contains(Tag.InstitutionName)){
+    	else if (keys.contains(Tag.InstitutionName)){
     		institution = keys.getString(Tag.InstitutionName);
     	}
-    	if (keys.contains(Tag.ReferringPhysicianName)){
+    	else if (keys.contains(Tag.ReferringPhysicianName)){
     		referingPhysician = keys.getString(Tag.ReferringPhysicianName);
     	}
-    	if (keys.contains(Tag.SeriesDate)){
+    	else if (keys.contains(Tag.SeriesDate)){
     		seriesDate = keys.getDate(Tag.SeriesDate).getTime();
     	}
-    	if (keys.contains(Tag.SeriesTime)){
+    	else if (keys.contains(Tag.SeriesTime)){
     		try {
     			seriesHour = parseTime(keys.getString(Tag.SeriesTime));
     		} catch (java.text.ParseException e) {
@@ -912,19 +913,19 @@ public class DcmQRSCP<T extends InstanceLocator> {
     			e.printStackTrace();
     		}
     	}
-    	if (keys.contains(Tag.SeriesDescription)){
+    	else if (keys.contains(Tag.SeriesDescription)){
     		seriesDesc = keys.getString(Tag.SeriesDescription);
     	}
-    	if (keys.contains(Tag.TransferSyntaxUID)){
+    	else if (keys.contains(Tag.TransferSyntaxUID)){
     		transferSyntax = keys.getString(Tag.TransferSyntaxUID);
     	}
-    	if (keys.contains(Tag.Manufacturer)){
+    	else  if (keys.contains(Tag.Manufacturer)){
     		manufacturer = keys.getString(Tag.Manufacturer);
     	}
 
-    	//HTableInterface tableInterface = new HTable (confHBase, "DicomTable");
+    	HTableInterface tableInterface = new HTable (confHBase, "DicomTable");
         //HTableInterface tableInterface = new SymColTable(confHBase, "DircomTable");
-       HTableInterface tableInterface =  new PrivateColumnsSharedTable(confHBase, "DicomTable");
+       //HTableInterface tableInterface =  new PrivateColumnsSharedTable(confHBase, "DicomTable");
 
         if (SOPInstanceUID != null){
     		Get get = new Get (SOPInstanceUID.getBytes());
@@ -951,71 +952,75 @@ public class DcmQRSCP<T extends InstanceLocator> {
     			filter = new SingleColumnValueFilter("Patient".getBytes(), "BirthDate".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(patientBirthDate));
     			scan.setAttribute("protected: "+"Patient" + ":BirthDate", "".getBytes());
     		}
-    		if (patientName != null){
+    		else if (patientName != null){
     			filter = new SingleColumnValueFilter("Patient".getBytes(), "Name".getBytes(), CompareFilter.CompareOp.EQUAL, patientName.getBytes());
     			scan.setAttribute("protected: " + "Patient" + ":Name", "".getBytes());
     		}
-//    		if (patientID != null){
-//    			filter = new SingleColumnValueFilter("Patient".getBytes(), "ID".getBytes(), CompareFilter.CompareOp.EQUAL, patientID.getBytes());
-//    		}
-//    		if (patientGender != null){
-//    			filter = new SingleColumnValueFilter("Patient".getBytes(), "Gender".getBytes(), CompareFilter.CompareOp.EQUAL, patientGender.getBytes());
-//    		}
-//    		if (patientWeight != null){
-//    			filter = new SingleColumnValueFilter("Patient".getBytes(), "Weight".getBytes(), CompareFilter.CompareOp.EQUAL, patientWeight.getBytes());
-//    		}
-//    		if (patientHistory != null){
-//    			filter = new SingleColumnValueFilter("Patient".getBytes(), "MedicalHistory".getBytes(), CompareFilter.CompareOp.EQUAL, patientHistory.getBytes());
-//    		}
-//    		if (imageType != null){
-//    			filter = new SingleColumnValueFilter("Image".getBytes(), "Type".getBytes(), CompareFilter.CompareOp.EQUAL, imageType.getBytes());
-//    		}
-//    		if (imageDate != null){
-//    			filter = new SingleColumnValueFilter("Image".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(imageDate));
-//    		}
-//    		if (imageHour != null){
-//    			filter = new SingleColumnValueFilter("Image".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(imageHour));
-//    		}
-//    		if (transferSyntax != null){
-//    			filter = new SingleColumnValueFilter("Image".getBytes(), "TransferSyntax".getBytes(), CompareFilter.CompareOp.EQUAL, transferSyntax.getBytes());
-//    		}
-//    		if (studyInstanceUID != null){
-//    			System.out.println("**************Setting studyInstanceUID filter************");
-//    			filter = new SingleColumnValueFilter("Study".getBytes(),"InstanceUID".getBytes(), CompareFilter.CompareOp.EQUAL, studyInstanceUID.getBytes());
-//    		}
-//    		if (studyDate != null){
-//    			filter = new SingleColumnValueFilter("Study".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(studyDate));
-//    		}
-//    		if (studyHour != null){
-//    			filter = new SingleColumnValueFilter("Study".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(studyHour));
-//    		}
-//    		if (studyDesc != null){
-//    			filter = new SingleColumnValueFilter("Study".getBytes(), "Description".getBytes(), CompareFilter.CompareOp.EQUAL, studyDesc.getBytes());
-//    		}
-//    		if (seriesInstanceUID != null){
-//    			filter = new SingleColumnValueFilter("Series".getBytes(), "InstanceUID".getBytes(), CompareFilter.CompareOp.EQUAL, seriesInstanceUID.getBytes());
-//    		}
-//    		if (seriesDate != null){
-//    			filter = new SingleColumnValueFilter("Series".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(seriesDate));
-//    		}
-//    		if (seriesHour != null){
-//    			filter = new SingleColumnValueFilter("Series".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(seriesHour));
-//    		}
-//    		if (modality != null){
-//    			filter = new SingleColumnValueFilter("Series".getBytes(), "Modality".getBytes(), CompareFilter.CompareOp.EQUAL, modality.getBytes());
-//    		}
-//    		if (manufacturer != null){
-//    			filter = new SingleColumnValueFilter("Series".getBytes(), "Manufacturer".getBytes(), CompareFilter.CompareOp.EQUAL, manufacturer.getBytes());
-//    		}
-//    		if (institution != null){
-//    			filter = new SingleColumnValueFilter("Series".getBytes(), "Institution".getBytes(), CompareFilter.CompareOp.EQUAL, institution.getBytes());
-//    		}
-//    		if (referingPhysician != null){
-//    			filter = new SingleColumnValueFilter("Series".getBytes(), "ReferingPhysician".getBytes(), CompareFilter.CompareOp.EQUAL, referingPhysician.getBytes());
-//    		}
-//    		if (seriesDesc != null){
-//    			filter = new SingleColumnValueFilter("Series".getBytes(), "Description".getBytes(), CompareFilter.CompareOp.EQUAL, seriesDesc.getBytes());
-//    		}
+    		else if (patientID != null){
+    			filter = new SingleColumnValueFilter("Patient".getBytes(), "ID".getBytes(), CompareFilter.CompareOp.EQUAL, patientID.getBytes());
+    		}
+    		else if (patientGender != null){
+    			filter = new SingleColumnValueFilter("Patient".getBytes(), "Gender".getBytes(), CompareFilter.CompareOp.EQUAL, patientGender.getBytes());
+    		}
+    		else if (patientWeight != null){
+    			filter = new SingleColumnValueFilter("Patient".getBytes(), "Weight".getBytes(), CompareFilter.CompareOp.EQUAL, patientWeight.getBytes());
+    			scan.setAttribute("protected: " + "Patient" + ":Weight", "".getBytes());
+    		}
+    		else if (patientHistory != null){
+    			filter = new SingleColumnValueFilter("Patient".getBytes(), "MedicalHistory".getBytes(), CompareFilter.CompareOp.EQUAL, patientHistory.getBytes());
+    			scan.setAttribute("protected: "+"Patient" + ":MedicalHistory", "".getBytes());
+    		}
+    		else if (imageType != null){
+    			filter = new SingleColumnValueFilter("Image".getBytes(), "Type".getBytes(), CompareFilter.CompareOp.EQUAL, imageType.getBytes());
+    		}
+    		else if (imageDate != null){
+    			filter = new SingleColumnValueFilter("Image".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(imageDate));
+    		}
+    		else if (imageHour != null){
+    			filter = new SingleColumnValueFilter("Image".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(imageHour));
+    		}
+    		else if (transferSyntax != null){
+    			filter = new SingleColumnValueFilter("Image".getBytes(), "TransferSyntax".getBytes(), CompareFilter.CompareOp.EQUAL, transferSyntax.getBytes());
+    		}
+    		else if (studyInstanceUID != null){
+    			//System.out.println("**************Setting studyInstanceUID filter************");
+    			filter = new SingleColumnValueFilter("Study".getBytes(),"InstanceUID".getBytes(), CompareFilter.CompareOp.EQUAL, studyInstanceUID.getBytes());
+    		}
+    		else if (studyDate != null){
+    			filter = new SingleColumnValueFilter("Study".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(studyDate));
+    		}
+    		else if (studyHour != null){
+    			filter = new SingleColumnValueFilter("Study".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(studyHour));
+    		}
+    		else if (studyDesc != null){
+    			filter = new SingleColumnValueFilter("Study".getBytes(), "Description".getBytes(), CompareFilter.CompareOp.EQUAL, studyDesc.getBytes());
+    		}
+    		else if (seriesInstanceUID != null){
+    			filter = new SingleColumnValueFilter("Series".getBytes(), "InstanceUID".getBytes(), CompareFilter.CompareOp.EQUAL, seriesInstanceUID.getBytes());
+    		}
+    		else if (seriesDate != null){
+    			filter = new SingleColumnValueFilter("Series".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(seriesDate));
+    		}
+    		else if (seriesHour != null){
+    			filter = new SingleColumnValueFilter("Series".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(seriesHour));
+    		}
+    		else if (modality != null){
+    			filter = new SingleColumnValueFilter("Series".getBytes(), "Modality".getBytes(), CompareFilter.CompareOp.EQUAL, modality.getBytes());
+    		}
+    		else if (manufacturer != null){
+    			filter = new SingleColumnValueFilter("Series".getBytes(), "Manufacturer".getBytes(), CompareFilter.CompareOp.EQUAL, manufacturer.getBytes());
+    		}
+    		else if (institution != null){
+    			filter = new SingleColumnValueFilter("Series".getBytes(), "Institution".getBytes(), CompareFilter.CompareOp.EQUAL, institution.getBytes());
+    			scan.setAttribute("protected: " + "Series" + ":Institution", "".getBytes());
+    		}
+    		else if (referingPhysician != null){
+    			filter = new SingleColumnValueFilter("Series".getBytes(), "ReferingPhysician".getBytes(), CompareFilter.CompareOp.EQUAL, referingPhysician.getBytes());
+    			scan.setAttribute("protected: " + "Series" + ":ReferingPhysician", "".getBytes());
+    		}
+    		else if (seriesDesc != null){
+    			filter = new SingleColumnValueFilter("Series".getBytes(), "Description".getBytes(), CompareFilter.CompareOp.EQUAL, seriesDesc.getBytes());
+    		}
     		scan.setFilter(filter);
     		ResultScanner scanner = tableInterface.getScanner(scan);
     		for (Result res = scanner.next(); res != null; res = scanner.next()){

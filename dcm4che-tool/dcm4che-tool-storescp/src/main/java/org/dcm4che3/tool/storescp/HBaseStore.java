@@ -34,7 +34,7 @@ import org.dcm4che3.util.SafeClose;
 
 import com.google.common.primitives.Longs;
 import java.math.BigInteger;
-import pt.uminho.haslab.safecloudclient.shareclient.SharedAdmin;
+//import pt.uminho.haslab.safecloudclient.shareclient.SharedAdmin;
 
 
 public abstract class HBaseStore extends BasicCStoreSCP {
@@ -67,9 +67,11 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 	private String seriesInstitution;
 	private String seriesRefPhysician;
 	private String seriesDescription;
-	//private final HBaseAdmin admin;
-	private final SharedAdmin admin;
-    private HTableInterface tableInterface;
+	
+	private final HBaseAdmin admin;
+	//private final SharedAdmin admin;
+    
+	private HTableInterface tableInterface;
 	Configuration conf;
 	private int status;
 	private String tsuid;
@@ -84,8 +86,8 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 		conf = new Configuration();
 		conf.addResource(file);
         System.out.println("Settings are " + file + ":"+storageDir);
-        //admin = new HBaseAdmin(conf);
-        admin = new SharedAdmin(conf);
+        admin = new HBaseAdmin(conf);
+        //admin = new SharedAdmin(conf);
 		this.storageDir = storageDir;
 	}
 
@@ -145,8 +147,7 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 		table.addFamily(studyFamily);
 
 		System.out.println("*************checking table********");
-		//if (!admin.tableExists(tableName)) {
-        if(!admin.tableExits(tableName)){
+		if (!admin.tableExists(tableName)) {
             System.out.println("*************creating table**********");
 			admin.createTable(table);
 			System.out.println("**************table created**************");
@@ -264,6 +265,7 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 		if (!patientHistory.equals(null)) {
 			// System.out.println("History: "+patientHistory);
 			put.add(patientCf, "MedicalHistory".getBytes(), patientHistory.getBytes());
+			put.setAttribute("protected:" + "Patient" + ":MedicalHistory", "".getBytes());
 		}
 		if (!imageType.equals(null)) {
 			put.add(imageCf, "Type".getBytes(), imageType.getBytes());
