@@ -84,9 +84,11 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 			throws MasterNotRunningException, ZooKeeperConnectionException, IOException {
 		super("*");
 		conf = new Configuration();
-		conf.addResource(file);
-        System.out.println("Settings are " + file + ":"+storageDir);
-        admin = new HBaseAdmin(conf);
+		conf.set("hbase.zookeeper.quorum","cloud80,cloud81,cloud82,cloud83");
+	//	conf.addResource(file);
+        //System.out.println("Settings are " + file + ":"+storageDir);
+          System.out.println("*********Configuration is set!");
+	 admin = new HBaseAdmin(conf);
         //admin = new SharedAdmin(conf);
 		this.storageDir = storageDir;
 	}

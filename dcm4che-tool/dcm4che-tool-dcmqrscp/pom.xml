@@ -47,7 +47,7 @@
   <artifactId>dcm4che-tool-dcmqrscp</artifactId>
   <name>dcm4che-tool-dcmqrscp</name>
   <properties>
-    <hbase.version>0.98.19-hadoop2</hbase.version>
+    <hbase.version>0.98.20-hadoop2</hbase.version>
   </properties>
   <description>DICOM image archive</description>
   <dependencies>

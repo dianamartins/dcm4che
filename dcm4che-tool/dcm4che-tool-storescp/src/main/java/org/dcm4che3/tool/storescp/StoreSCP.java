@@ -278,6 +278,9 @@ public class StoreSCP {
         try {
         	//String [] myargs = {"-b","STORESCP:11115","-f","def-hbase-client.xml","--directory","/Users/dianamartins/recebidasHBaseSCP"}; 
             CommandLine cl = parseComandLine(args);
+            if (cl.hasOption("hbase")){
+                    System.out.println("*****Opcao -f reconhecida!******");
+            }
             StoreSCP main = new StoreSCP(cl);
             CLIUtils.configureBindServer(main.conn, main.ae, cl);
             CLIUtils.configure(main.conn, cl);
