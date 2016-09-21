@@ -123,7 +123,7 @@ public class StoreSCU {
     private int filesScanned;
     private int filesSent;
     private static ArrayList <Long> timers;
-    private static final String resultsFile = "results/resultsSTORESCU.txt";
+    private static final String resultsFile = "~/dcm4che/results/resultsSTORESCU.txt";
 
     private RSPHandlerFactory rspHandlerFactory = new RSPHandlerFactory() {
 
