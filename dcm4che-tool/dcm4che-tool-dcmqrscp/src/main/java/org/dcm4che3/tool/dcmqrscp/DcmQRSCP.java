@@ -1045,6 +1045,9 @@ public class DcmQRSCP<T extends InstanceLocator> {
     		}
     	}
         tableInterface.close();
+        System.out.println("*************Closing table interface**************");
+        int num_res= list.size();
+        System.out.println("***************Number of matches: " + num_res + "*************");
     	return list;
     }
     
