@@ -611,7 +611,13 @@ public class DcmQRSCP<T extends InstanceLocator> {
             if (cl.hasOption("hbase")) {
             	usingHBase = true;
             	confHBase = new Configuration();
-            	confHBase.addResource(cl.getOptionValue("hbase"));
+            	confHBase.set("hbase.zookeeper.quorum","cloud80");
+        		confHBase.set("hbase.rootdir","hdfs://cloud80:8020/hbase");
+        		confHBase.set("hbase.cluster.distributed","true");
+        		confHBase.set("hbase.zookeeper.property.dataDir","/usr/local/hbase-0.98.20-hadoop2/zookeeper-dir");
+        		confHBase.set("hbase.master.hostname","cloud80");
+        		confHBase.set("hbase.zookeeper.property.clientPort","2181");
+            	//confHBase.addResource(cl.getOptionValue("hbase"));
             	imagesFolder = cl.getOptionValue("imagesFolder");
             }else{
             	usingHBase = false;
