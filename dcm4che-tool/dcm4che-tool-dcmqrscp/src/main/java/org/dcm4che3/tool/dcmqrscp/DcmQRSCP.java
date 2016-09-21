@@ -248,9 +248,11 @@ public class DcmQRSCP<T extends InstanceLocator> {
             level.validateRetrieveKeys(keys, rootLevel, relational(as, rq));
             List<T> matches = new ArrayList<T>();
             if (!usingHBase){
+            	System.out.println("************ Begining cycle without hbase*********");
             	matches = DcmQRSCP.this
                         .calculateMatches(keys);
             }else{
+            	System.out.println("************ Begining cycle with hbase ************");
               try {
                 matches = DcmQRSCP.this.calculateHBaseMatches(keys);
               } catch (Exception ex) {
@@ -609,6 +611,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
         	CommandLine cl = parseComandLine(args);
         	DcmQRSCP<InstanceLocator> main = new DcmQRSCP<InstanceLocator>();
             if (cl.hasOption("hbase")) {
+            	System.out.println("************* Option -f recognized, usingHBase=true ***********");
             	usingHBase = true;
             	confHBase = new Configuration();
             	confHBase.set("hbase.zookeeper.quorum","cloud80");
