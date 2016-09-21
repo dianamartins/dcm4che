@@ -1,17 +1,28 @@
 <configuration>
-    <!--The default HBase client uses the def-hbase-site configuration -->
-    <property>
-        <name>hbase.zookeeper.quorum</name>
-        <value>192.168.112.80</value>
-	<!--<name>cloud80</name>-->
-    </property>
-    <property>
-        <name>hbase.zookeeper.property.clientPort</name>
-        <value>2181</value>
-    </property>
-     <property>
-    <!--  <name>hbase.master.hostname</name>
-    <value>cloud80.cluster.lsd.di.uminho.pt.local</value>-->
+  <!--The default HBase client uses the def-hbase-site configuration -->
+  <property>
+    <name>hbase.rootdir</name> <!--propriedade para definir qual o filesystem-->
+    <value>hdfs://cloud80:8020/hbase</value>
+  </property>
+  <property>
+    <name>hbase.cluster.distributed</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>hbase.zookeeper.property.dataDir</name>
+    <value>/usr/local/hbase-0.98.20-hadoop2/zookeeper-dir</value>
+  </property>
+  <property>
+    <name>hbase.zookeeper.quorum</name>
+    <value>cloud80</value>
+  </property>
+  <property>
+    <name>hbase.zookeeper.property.clientPort</name>
+    <value>2181</value>
+  </property>
+  <property>
+    <name>hbase.master.hostname</name>
+    <value>cloud80</value>-->
     <!-- master.local is the DNS name in my network pointing to hbase master -->
   </property>
 </configuration>

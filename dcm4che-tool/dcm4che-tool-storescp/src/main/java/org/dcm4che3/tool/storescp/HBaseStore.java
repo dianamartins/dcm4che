@@ -84,10 +84,15 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 			throws MasterNotRunningException, ZooKeeperConnectionException, IOException {
 		super("*");
 		conf = new Configuration();
-		conf.set("hbase.zookeeper.quorum","cloud80,cloud81,cloud82,cloud83");
+		conf.set("hbase.zookeeper.quorum","cloud80");
+		conf.set("hbase.rootdir","hdfs://cloud80:8020/hbase");
+		conf.set("hbase.cluster.distributed","true");
+		conf.set("hbase.zookeeper.property.dataDir","/usr/local/hbase-0.98.20-hadoop2/zookeeper-dir");
+		conf.set("hbase.master.hostname","cloud80");
+		conf.set("hbase.zookeeper.property.clientPort","2181");
 	//	conf.addResource(file);
         //System.out.println("Settings are " + file + ":"+storageDir);
-          System.out.println("*********Configuration is set!");
+          System.out.println("*********Configuration is set!**********");
 	 admin = new HBaseAdmin(conf);
         //admin = new SharedAdmin(conf);
 		this.storageDir = storageDir;
@@ -150,7 +155,7 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 
 		System.out.println("*************checking table********");
 		if (!admin.tableExists(tableName)) {
-            System.out.println("*************creating table**********");
+            		System.out.println("*************creating table**********");
 			admin.createTable(table);
 			System.out.println("**************table created**************");
 		}
