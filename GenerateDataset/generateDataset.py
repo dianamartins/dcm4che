@@ -128,13 +128,15 @@ if __name__ == '__main__':
     cl_parser = argparse.ArgumentParser(description='Give preferences.xml')
     cl_parser.add_argument('file', help='preferences file', type=str)
     cl_parser.add_argument('num_fixed_weight', help='number of images with weight=70kg', type=int)
+    cl_parser.add_argument('num_images', help='number of copies', type=int)
     args = cl_parser.parse_args()
     preferences_file = args.file
     num_fixed_weight = args.num_fixed_weight
+    replicas = args.num_images
 
     tree = ET.parse(preferences_file)
-    replicas = tree.find("numreplicas").text
-    num_replicas = int(replicas)
+    # replicas = tree.find("numreplicas").text
+    # num_replicas = int(replicas)
     base_image = tree.find("baseImage").text
     replicas_folder = tree.find("replicasFolder").text
     dcmodify = tree.find("dcmodify").text
