@@ -1,5 +1,5 @@
 <dataset>
-    <baseImage>1.dcm</baseImage>
+    <baseImage>/home/gsd/dcm4che/GenerateDataset/1.dcm</baseImage>
     <replicasFolder>/home/gsd/dcm4che/replicas/</replicasFolder>
     <dcmodify>/home/gsd/dcmtk-3.6.0-linux-i686-static/bin/dcmodify</dcmodify>
 </dataset>
