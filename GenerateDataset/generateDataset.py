@@ -132,7 +132,7 @@ if __name__ == '__main__':
     args = cl_parser.parse_args()
     preferences_file = args.file
     num_fixed_weight = args.num_fixed_weight
-    replicas = args.num_images
+    num_replicas = args.num_images
 
     tree = ET.parse(preferences_file)
     # replicas = tree.find("numreplicas").text
