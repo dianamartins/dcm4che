@@ -845,42 +845,44 @@ public class DcmQRSCP<T extends InstanceLocator> {
     // Método alterado
     public List<T> calculateHBaseMatches(Attributes keys)
     		throws DicomServiceException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, FileNotFoundException, InvalidAlgorithmParameterException { //throw InvalidNumberOfBits
-    	List<T> list = new ArrayList<T>();
+    	System.out.println("*************Calculating HBase matches*********");
+	List<T> list = new ArrayList<T>();
  
     	if (keys.contains(Tag.StudyInstanceUID)){
     		studyInstanceUID = keys.getString(Tag.StudyInstanceUID);
     	}
-    	else if (keys.contains(Tag.SeriesInstanceUID)){
+    	if (keys.contains(Tag.SeriesInstanceUID)){
     		seriesInstanceUID = keys.getString(Tag.SeriesInstanceUID);
     	}
-    	else if (keys.contains(Tag.SOPInstanceUID)){
+    	if (keys.contains(Tag.SOPInstanceUID)){
+		System.out.println("*******Found SOPInstanceUID!******");
     		SOPInstanceUID = keys.getString(Tag.SOPInstanceUID);
     	}
-    	else if (keys.contains(Tag.PatientID)){
+    	if (keys.contains(Tag.PatientID)){
     		patientID = keys.getString(Tag.PatientID);
     	}
-    	else if (keys.contains(Tag.PatientName)){
+    	if (keys.contains(Tag.PatientName)){
     		patientName = keys.getString(Tag.PatientName);
     	}
-    	else if (keys.contains(Tag.PatientBirthDate)){
+    	if (keys.contains(Tag.PatientBirthDate)){
     		patientBirthDate = keys.getDate(Tag.PatientBirthDate).getTime();
     	}
-    	else if (keys.contains(Tag.PatientSex)){
+    	if (keys.contains(Tag.PatientSex)){
     		patientGender = keys.getString(Tag.PatientSex);
     	}
-    	else if (keys.contains(Tag.PatientWeight)){
+    	if (keys.contains(Tag.PatientWeight)){
     		patientWeight = keys.getString(Tag.PatientWeight);
     	}
-    	else if (keys.contains(Tag.AdditionalPatientHistory)){
+    	if (keys.contains(Tag.AdditionalPatientHistory)){
     		patientHistory = keys.getString(Tag.AdditionalPatientHistory);
     	}
-    	else if (keys.contains(Tag.ImageType)){
+    	if (keys.contains(Tag.ImageType)){
     		imageType = keys.getString(Tag.ImageType);
     	}
-    	else if (keys.contains(Tag.ContentDate)){
+    	if (keys.contains(Tag.ContentDate)){
     		imageDate = keys.getDate(Tag.ContentDate).getTime();
     	}
-    	else if (keys.contains(Tag.ContentTime)){
+    	if (keys.contains(Tag.ContentTime)){
     		try {
     			imageHour = parseTime(keys.getString(Tag.ContentTime));
     		} catch (java.text.ParseException e) {
@@ -888,10 +890,10 @@ public class DcmQRSCP<T extends InstanceLocator> {
     			e.printStackTrace();
     		}
     	}
-    	else if (keys.contains(Tag.StudyDate)){
+    	if (keys.contains(Tag.StudyDate)){
     		studyDate = keys.getDate(Tag.StudyDate).getTime();
     	}
-    	else if (keys.contains(Tag.StudyTime)){
+    	if (keys.contains(Tag.StudyTime)){
     		try {
     			studyHour = parseTime(keys.getString(Tag.StudyTime));
     		} catch (java.text.ParseException e) {
@@ -899,22 +901,22 @@ public class DcmQRSCP<T extends InstanceLocator> {
     			e.printStackTrace();
     		}
     	}
-    	else if (keys.contains(Tag.StudyDescription)){
+    	if (keys.contains(Tag.StudyDescription)){
     		studyDesc = keys.getString(Tag.StudyDescription);
     	}
-    	else if (keys.contains(Tag.Modality)){
+    	if (keys.contains(Tag.Modality)){
     		modality = keys.getString(Tag.Modality);
     	}
-    	else if (keys.contains(Tag.InstitutionName)){
+    	if (keys.contains(Tag.InstitutionName)){
     		institution = keys.getString(Tag.InstitutionName);
     	}
-    	else if (keys.contains(Tag.ReferringPhysicianName)){
+    	if (keys.contains(Tag.ReferringPhysicianName)){
     		referingPhysician = keys.getString(Tag.ReferringPhysicianName);
     	}
-    	else if (keys.contains(Tag.SeriesDate)){
+    	if (keys.contains(Tag.SeriesDate)){
     		seriesDate = keys.getDate(Tag.SeriesDate).getTime();
     	}
-    	else if (keys.contains(Tag.SeriesTime)){
+    	if (keys.contains(Tag.SeriesTime)){
     		try {
     			seriesHour = parseTime(keys.getString(Tag.SeriesTime));
     		} catch (java.text.ParseException e) {
@@ -922,13 +924,13 @@ public class DcmQRSCP<T extends InstanceLocator> {
     			e.printStackTrace();
     		}
     	}
-    	else if (keys.contains(Tag.SeriesDescription)){
+    	if (keys.contains(Tag.SeriesDescription)){
     		seriesDesc = keys.getString(Tag.SeriesDescription);
     	}
-    	else if (keys.contains(Tag.TransferSyntaxUID)){
+    	if (keys.contains(Tag.TransferSyntaxUID)){
     		transferSyntax = keys.getString(Tag.TransferSyntaxUID);
     	}
-    	else  if (keys.contains(Tag.Manufacturer)){
+    	if (keys.contains(Tag.Manufacturer)){
     		manufacturer = keys.getString(Tag.Manufacturer);
     	}
 
@@ -937,6 +939,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
        //HTableInterface tableInterface =  new PrivateColumnsSharedTable(confHBase, "DicomTable");
 
         if (SOPInstanceUID != null){
+		System.out.println("*****Starting get operation******");
     		Get get = new Get (SOPInstanceUID.getBytes());
             LOG.debug("GETXY instance UID "+ SOPInstanceUID);
             get.setAttribute("protected: "+"Patient" + ":BirthDate", "".getBytes());

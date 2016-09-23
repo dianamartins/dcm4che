@@ -141,7 +141,7 @@ public class GetSCU {
     private Association as;
     private static ArrayList <Long> timers = new ArrayList <Long>();
     private static Long t1;
-    private static String resultsFile = "results/resultsGETSCU.txt";
+    private static String resultsFile = "/home/gsd/dcm4che/results/resultsGETSCU.txt";
 
     private BasicCStoreSCP storageSCP = new BasicCStoreSCP("*") {
 
