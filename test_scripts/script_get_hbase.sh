@@ -33,6 +33,6 @@ echo "Test ended"
 
 echo "Stoping dstat"
 
-kill dstat
+pkill dstat
 
 echo "Done!"

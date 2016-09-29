@@ -42,6 +42,10 @@ echo "Creating new results file"
 
 ssh -i ~/.ssh/gsd_private_key gsd@cloud85 touch /home/gsd/dcm4che/results/resultsGETSCU.txt
 
+echo "Deleting received images"
+
+ssh -i ~/.ssh/gsd_private_key gsd@cloud85 rm /home/gsd/1.*
+
 echo "Starting GET test"
 
 ssh -i ~/.ssh/gsd_private_key gsd@cloud85 nohup /home/gsd/dcm4che/test_scripts/script_get_hbase.sh 
