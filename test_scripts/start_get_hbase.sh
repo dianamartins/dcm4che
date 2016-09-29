@@ -2,7 +2,7 @@
 
 echo "Preparing to start GET test"
 
-hosts_1=(cloud80, cloud81, cloud82, cloud83, cloud84)
+hosts_1=(cloud80 cloud81 cloud82 cloud83 cloud84)
 
 hosts_2=(cloud80 cloud81 cloud82 cloud83 cloud84 cloud85)
 
