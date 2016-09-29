@@ -32,7 +32,7 @@ done
 
 echo "Copying previous results to localhost"
 
-scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/* ~/tests_results/store/
+scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/* ~/tests_results/get/
 
 echo "Deleting previous results"
 
