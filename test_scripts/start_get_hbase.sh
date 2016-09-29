@@ -27,7 +27,7 @@ echo "Deleting previous dstats"
 for host in "${hosts_2[@]}"
 do
 	echo $host
-	ssh -i ~/.ssh/gsd_private_key gsd@$host rm /home/gsd/dcm4che/results/*
+	ssh -i ~/.ssh/gsd_private_key gsd@$host rm /home/gsd/$host.csv
 done
 
 echo "Copying previous results to localhost"

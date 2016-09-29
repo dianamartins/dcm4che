@@ -6,7 +6,7 @@ max=$(ls -l /home/gsd/dcm4che/replicas/*.dcm | wc -l)
 
 echo "Starting dstat cloud85"
 
-nohup dstat -t -c -d -m -n -r --output $host.csv --noheaders > /dev/null &
+nohup dstat -t -c -d -m -n -r --output cloud85.csv --noheaders > /dev/null &
 
 echo "Starting get clients"
 
