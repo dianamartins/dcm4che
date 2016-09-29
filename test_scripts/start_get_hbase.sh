@@ -46,6 +46,14 @@ echo "Deleting received images"
 
 ssh -i ~/.ssh/gsd_private_key gsd@cloud85 rm /home/gsd/1.*
 
+echo "Starting dstats"
+
+for host in "${hosts_1[@]}" 
+do
+	echo $host
+	ssh -i ~/.ssh/gsd_private_key gsd@$host nohup dstat -t -c -d -m -n -r --output $host.csv --noheaders > /dev/null &
+done
+
 echo "Starting GET test"
 
 ssh -i ~/.ssh/gsd_private_key gsd@cloud85 nohup /home/gsd/dcm4che/test_scripts/script_get_hbase.sh 
