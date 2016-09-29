@@ -21,7 +21,7 @@ do
 		f=1
 	fi
 	echo "Image $f chosen"
-	sop=$("/home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/dcmdump /home/gsd/dcm4che/replicas/$f.dcm | grep '(0008,0018)'| grep -o '\[[0-9.]*\]' | grep -o '[0-9.]*'")
+	sop=$(/home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/dcmdump /home/gsd/dcm4che/replicas/$f.dcm | grep '(0008,0018)'| grep -o '\[[0-9.]*\]' | grep -o '[0-9.]*')
 
 	echo "Getting $sop"
 	/home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/getscu -c DCMQRSCP@cloud84:11113 -L IMAGE -m SOPInstanceUID=$sop StudyInstanceUID=1 SeriesInstanceUID=1  #>> query.log
