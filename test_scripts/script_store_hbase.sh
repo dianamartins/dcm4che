@@ -32,9 +32,9 @@ echo "Generating dataset"
 
 #echo $num_images
 
-echo "Already done"
+#echo "Already done"
 
-# ssh -i ~/.ssh/gsd_private_key gsd@cloud85 python3 /home/gsd/dcm4che/GenerateDataset/generateDataset.py /home/gsd/dcm4che/GenerateDataset/preferences.xml 1 5000
+ssh -i ~/.ssh/gsd_private_key gsd@cloud85 python3 /home/gsd/dcm4che/GenerateDataset/generateDataset.py /home/gsd/dcm4che/GenerateDataset/preferences.xml 1 1000
 
 echo "Starting StoreSCP"
 

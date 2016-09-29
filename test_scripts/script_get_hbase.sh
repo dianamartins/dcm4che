@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
-runs=1 # mudar
+runs=1000 # mudar
 
-max=$(ssh -i ~/.ssh/gsd_private_key gsd@cloud85 ls -l /home/gsd/dcm4che/replicas/*.dcm | wc -l)
+max=$(ls -l /home/gsd/dcm4che/replicas/*.dcm | wc -l)
 
 echo "Maximum $max"
+
+hosts=(cloud80 cloud81 cloud82 cloud83 cloud84)
 
 echo "Starting DCMQRSCP"
 
@@ -12,9 +14,29 @@ ssh -i ~/.ssh/gsd_private_key gsd@cloud84 nohup /home/gsd/dcm4che/dcm4che-assemb
 
 sleep 7
 
+echo "Removing previous dstats"
+
+echo "cloud85"
+
+rm /home/gsd/cloud85.csv
+
+for host in "${hosts[@]}"
+do
+	echo $host
+	ssh -i ~/.ssh/gsd_private_key gsd@$host rm /home/gsd/$host.csv
+done
+
+echo "Removing previous results"
+
+rm /home/gsd/dcm4che/results/resultsGETSCU.txt
+
+echo "Creating new results file"
+
+touch /home/gsd/dcm4che/results/resultsGETSCU.txt
+
 echo "Starting dstat"
 
-hosts=(cloud80 cloud81 cloud82 cloud83 cloud84 cloud85)
+echo "cloud85"
 
 for host in "${hosts[@]}" 
 do
@@ -35,12 +57,12 @@ do
 		f=1
 	fi
 	echo "Image $f chosen"
-	sop=$(ssh -i ~/.ssh/gsd_private_key gsd@cloud85 "/home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/dcmdump /home/gsd/dcm4che/replicas/$f.dcm | grep '(0008,0018)'| grep -o '\[[0-9.]*\]' | grep -o '[0-9.]*'")
+	sop=$("/home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/dcmdump /home/gsd/dcm4che/replicas/$f.dcm | grep '(0008,0018)'| grep -o '\[[0-9.]*\]' | grep -o '[0-9.]*'")
 
 	echo "Getting $sop"
-	ssh -i ~/.ssh/gsd_private_key gsd@cloud85 /home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/getscu -c DCMQRSCP@cloud84:11113 -L IMAGE -m SOPInstanceUID=$sop StudyInstanceUID=1 SeriesInstanceUID=1 >> query.log
-	ssh -i ~/.ssh/gsd_private_key gsd@cloud85 mv /home/gsd/dcm4che/results/resultsGETSCU.txt /home/gsd/dcm4che/results/store$i.txt
-	cat query.log	
+	/home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/getscu -c DCMQRSCP@cloud84:11113 -L IMAGE -m SOPInstanceUID=$sop StudyInstanceUID=1 SeriesInstanceUID=1  #>> query.log
+	mv /home/gsd/dcm4che/results/resultsGETSCU.txt /home/gsd/dcm4che/results/store$i.txt
+	#cat query.log	
 done
 
 echo "Test ended"
@@ -51,10 +73,26 @@ echo "Test ended"
 
 echo "Stoping dstat"
 
+echo "cloud85"
+
+kill dstat
+
 for host in "${hosts[@]}" 
 do
 	echo $host
 	ssh -i ~/.ssh/gsd_private_key gsd@$host pkill dstat
 done
+
+# echo "Copying result files to the localhost"
+
+# for host in "${hosts[@]}"
+# do
+#	echo $host
+#	scp -i ~/.ssh/gsd_private_key gsd@$host:/home/gsd/$host.csv ~/tests_results/get/
+# done
+
+# echo "resultsSTORESCU.txt"
+
+# scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/* ~/tests_results/get/
 
 echo "Done!"
