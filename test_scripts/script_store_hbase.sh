@@ -17,7 +17,7 @@ echo "Removing previous dstats"
 for host in "${hosts[@]}"
 do
 	echo $host
-	ssh -i ~/.ssh/gsd_private_key gsd@$host nohup rm /home/gsd/$host.csv
+	ssh -i ~/.ssh/gsd_private_key gsd@$host rm /home/gsd/$host.csv
 done
 
 echo "Removing previous results"
