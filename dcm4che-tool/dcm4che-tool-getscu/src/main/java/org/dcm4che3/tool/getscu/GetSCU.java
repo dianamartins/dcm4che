@@ -338,7 +338,7 @@ public class GetSCU {
 
 
     @SuppressWarnings("unchecked")
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         try {
         	CommandLine cl = parseComandLine(args);
             GetSCU main = new GetSCU();
@@ -405,12 +405,13 @@ public class GetSCU {
 				try {
 					bw.append(timers.get(i).toString());
 					bw.newLine();
-					bw.close();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
+			bw.flush();
+			bw.close();
 		}
     }
 
