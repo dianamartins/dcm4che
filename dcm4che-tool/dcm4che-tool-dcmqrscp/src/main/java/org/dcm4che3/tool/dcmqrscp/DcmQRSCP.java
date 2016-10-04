@@ -850,6 +850,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
  
     	if (keys.contains(Tag.StudyInstanceUID)){
     		studyInstanceUID = keys.getString(Tag.StudyInstanceUID);
+    		System.out.println("*************Found StudyInstanceUID*************");
     	}
     	if (keys.contains(Tag.SeriesInstanceUID)){
     		seriesInstanceUID = keys.getString(Tag.SeriesInstanceUID);
@@ -866,6 +867,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
     	}
     	if (keys.contains(Tag.PatientBirthDate)){
     		patientBirthDate = keys.getDate(Tag.PatientBirthDate).getTime();
+    		System.out.println("****************Found patient birth date!***********");
     	}
     	if (keys.contains(Tag.PatientSex)){
     		patientGender = keys.getString(Tag.PatientSex);
@@ -994,10 +996,10 @@ public class DcmQRSCP<T extends InstanceLocator> {
     		else if (transferSyntax != null){
     			filter = new SingleColumnValueFilter("Image".getBytes(), "TransferSyntax".getBytes(), CompareFilter.CompareOp.EQUAL, transferSyntax.getBytes());
     		}
-    		else if (studyInstanceUID != null){
-    			//System.out.println("**************Setting studyInstanceUID filter************");
-    			filter = new SingleColumnValueFilter("Study".getBytes(),"InstanceUID".getBytes(), CompareFilter.CompareOp.EQUAL, studyInstanceUID.getBytes());
-    		}
+//    		else if (studyInstanceUID != null){
+//    			//System.out.println("**************Setting studyInstanceUID filter************");
+//    			filter = new SingleColumnValueFilter("Study".getBytes(),"InstanceUID".getBytes(), CompareFilter.CompareOp.EQUAL, studyInstanceUID.getBytes());
+//    		}
     		else if (studyDate != null){
     			filter = new SingleColumnValueFilter("Study".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(studyDate));
     		}
