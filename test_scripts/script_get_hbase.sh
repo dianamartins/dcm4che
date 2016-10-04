@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-runs=1000 # mudar
+runs=3000 # mudar
 
 max=$(ls -l /home/gsd/dcm4che/replicas/*.dcm | wc -l)
 
