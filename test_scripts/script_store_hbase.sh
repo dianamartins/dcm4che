@@ -42,14 +42,14 @@ ssh -i ~/.ssh/gsd_private_key gsd@cloud84 nohup /home/gsd/dcm4che/dcm4che-assemb
 
 sleep 7
 
-echo "Starting dstat"
+#echo "Starting dstat"
 
 
-for host in "${hosts[@]}" 
-do
-	echo $host
-	ssh -i ~/.ssh/gsd_private_key gsd@$host nohup dstat -t -c -d -m -n -r --output $host.csv --noheaders > /dev/null &
-done
+#for host in "${hosts[@]}" 
+#do
+#	echo $host
+#	ssh -i ~/.ssh/gsd_private_key gsd@$host nohup dstat -t -c -d -m -n -r --output $host.csv --noheaders > /dev/null &
+#done
 
 echo "Starting StoreSCU"
 
@@ -61,24 +61,24 @@ echo "Test ended"
 
 # ssh -i ~/.ssh/gsd_private_key gsd@cloud84 ps aux | grep -i 1111[4] | awk {'print $2'} | kill
 
-echo "Stoping dstat"
+#echo "Stoping dstat"
 
-for host in "${hosts[@]}" 
-do
-	echo $host
-	ssh -i ~/.ssh/gsd_private_key gsd@$host pkill dstat
-done
+#for host in "${hosts[@]}" 
+#do
+#	echo $host
+#	ssh -i ~/.ssh/gsd_private_key gsd@$host pkill dstat
+#done
+#
+#echo "Copying result files to the localhost"
 
-echo "Copying result files to the localhost"
+#for host in "${hosts[@]}"
+#do
+#	echo $host
+#	scp -i ~/.ssh/gsd_private_key gsd@$host:/home/gsd/$host.csv ~/tests_results/store/
+#done
 
-for host in "${hosts[@]}"
-do
-	echo $host
-	scp -i ~/.ssh/gsd_private_key gsd@$host:/home/gsd/$host.csv ~/tests_results/store/
-done
+#echo "resultsSTORESCU.txt"
 
-echo "resultsSTORESCU.txt"
-
-scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/resultsSTORESCU.txt ~/tests_results/store/
+#scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/resultsSTORESCU.txt ~/tests_results/store/
 
 echo "Done!"

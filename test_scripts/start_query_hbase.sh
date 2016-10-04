@@ -19,7 +19,7 @@ echo "Copying previous dstats to localhost"
 for host in "${hosts_2[@]}"
 do
 	echo $host
-	scp -i ~/.ssh/gsd_private_key gsd@$host:/home/gsd/$host.csv ~/tests_results/get/
+	scp -i ~/.ssh/gsd_private_key gsd@$host:/home/gsd/$host.csv ~/tests_results/scan/run1.1/
 done
 
 echo "Deleting previous dstats"
@@ -32,7 +32,7 @@ done
 
 echo "Copying previous results to localhost"
 
-scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/* ~/tests_results/get/
+scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/* ~/tests_results/scan/run1.1/
 
 echo "Deleting previous results"
 
@@ -56,6 +56,8 @@ done
 
 echo "Starting GET test"
 
-ssh -i ~/.ssh/gsd_private_key gsd@cloud85 nohup /home/gsd/dcm4che/test_scripts/script_get_hbase.sh 
+# ssh -i ~/.ssh/gsd_private_key gsd@cloud85 nohup /home/gsd/dcm4che/test_scripts/script_get_hbase.sh 
+
+ssh -i ~/.ssh/gsd_private_key gsd@cloud85 nohup /home/gsd/dcm4che/test_scripts/script_scan_hbase.sh 
 
 echo "Test ended. Done!!!!"
