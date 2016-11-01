@@ -210,8 +210,10 @@ public class GetSCU {
     
     public static void storeTo(Association as, Attributes fmi, 
             PDVInputStream data, File file) throws IOException  {
+        if (firstTime){
         	t3 = System.nanoTime();
         	timers.add(t3);
+        }
         LOG.info("{}: M-WRITE {}", as, file);
         file.getParentFile().mkdirs();
         DicomOutputStream out = new DicomOutputStream(file);
