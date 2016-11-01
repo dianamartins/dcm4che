@@ -140,8 +140,9 @@ public class GetSCU {
     private int[] inFilter = DEF_IN_FILTER;
     private Association as;
     private static ArrayList <Long> timers = new ArrayList <Long>();
-    private static Long t1;
     private static String resultsFile = "/home/gsd/dcm4che/results/resultsGETSCU.txt";
+    private boolean firstTime = true;
+    private static long t3;
 
     private BasicCStoreSCP storageSCP = new BasicCStoreSCP("*") {
 
@@ -149,6 +150,10 @@ public class GetSCU {
         protected void store(Association as, PresentationContext pc, Attributes rq,
                 PDVInputStream data, Attributes rsp)
                 throws IOException {
+        	if (firstTime){
+            	t3 = System.nanoTime();
+            }
+        	firstTime = false;
             if (storageDir == null)
                 return;
             String iuid = rq.getString(Tag.AffectedSOPInstanceUID);
@@ -156,6 +161,7 @@ public class GetSCU {
             String tsuid = pc.getTransferSyntax();
             File file = new File(storageDir, iuid );
             try {
+               
                 storeTo(as, as.createFileMetaInformation(iuid, cuid, tsuid),
                         data, file);
             } catch (Exception e) {
@@ -215,9 +221,6 @@ public class GetSCU {
         } finally {
             SafeClose.close(out);
         }
-        long t2 = System.nanoTime();
-        long total = t2 - t1;
-        timers.add(total); 
     }
 
     private DicomServiceRegistry createServiceRegistry() {
@@ -360,6 +363,7 @@ public class GetSCU {
             try {
                 main.open();
                 List<String> argList = cl.getArgList(); // retrieve unrecognized options
+                long t1 = System.nanoTime();
                 if (argList.isEmpty())
                     main.retrieve(); //this is the most common
                 else{
@@ -367,9 +371,11 @@ public class GetSCU {
                         main.retrieve(new File(arg));
                     }
                 }
+                long t2 = System.nanoTime();
+                timers.add(t2-t1); //retrieve do total de imagens 
+                timers.add(t3-t1); //final do scan. Quando o store é chamado
             } finally {
-                main.close();
-                
+                main.close();       
                 executorService.shutdown();
                 scheduledExecutorService.shutdown();
             }
@@ -529,7 +535,6 @@ public class GetSCU {
     }
     
     private void retrieve(Attributes keys, DimseRSPHandler rspHandler) throws IOException, InterruptedException {
-    	t1 = System.nanoTime();
         as.cget(model.getCuid(), priority, keys, null, rspHandler);
     }
 
