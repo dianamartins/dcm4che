@@ -141,7 +141,7 @@ public class GetSCU {
     private Association as;
     private static ArrayList <Long> timers = new ArrayList <Long>();
     private static String resultsFile = "/home/gsd/dcm4che/results/resultsGETSCU.txt";
-    private boolean firstTime = true;
+    private static boolean firstTime = true;
     private static long t3;
 
     private BasicCStoreSCP storageSCP = new BasicCStoreSCP("*") {
@@ -152,8 +152,8 @@ public class GetSCU {
                 throws IOException {
         	if (firstTime){
             	t3 = System.nanoTime();
+            	firstTime = false;
             }
-        	firstTime = false;
             if (storageDir == null)
                 return;
             String iuid = rq.getString(Tag.AffectedSOPInstanceUID);
@@ -372,8 +372,9 @@ public class GetSCU {
                     }
                 }
                 long t2 = System.nanoTime();
-                timers.add(t2-t1); //retrieve do total de imagens 
-                timers.add(t3-t1); //final do scan. Quando o store é chamado
+                timers.add(t1); //inicio retrieve
+                timers.add(t2); //fim retrive
+                timers.add(t3); //fim do scan e inicio do store da primeira imagem
             } finally {
                 main.close();       
                 executorService.shutdown();
