@@ -213,6 +213,7 @@ public class GetSCU {
         if (firstTime){
         	t3 = System.nanoTime();
         	timers.add(t3);
+        	firstTime = false;
         }
         LOG.info("{}: M-WRITE {}", as, file);
         file.getParentFile().mkdirs();
