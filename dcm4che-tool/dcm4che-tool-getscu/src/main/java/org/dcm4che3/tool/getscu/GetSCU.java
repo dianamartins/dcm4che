@@ -54,6 +54,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.OptionBuilder;
@@ -374,6 +375,7 @@ public class GetSCU {
                         main.retrieve(new File(arg));
                     }
                 }
+                main.getDevice().getExecutor().wait();
                 t2 = System.nanoTime();
             } finally {
                 main.close();       
