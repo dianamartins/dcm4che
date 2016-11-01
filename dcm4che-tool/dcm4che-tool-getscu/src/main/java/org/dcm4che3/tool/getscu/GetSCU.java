@@ -143,6 +143,8 @@ public class GetSCU {
     private static String resultsFile = "/home/gsd/dcm4che/results/resultsGETSCU.txt";
     private static boolean firstTime = true;
     private static long t3;
+    private static long t1;
+    private static long t2;
 
     private BasicCStoreSCP storageSCP = new BasicCStoreSCP("*") {
 
@@ -208,10 +210,8 @@ public class GetSCU {
     
     public static void storeTo(Association as, Attributes fmi, 
             PDVInputStream data, File file) throws IOException  {
-    	if (firstTime){
         	t3 = System.nanoTime();
-        	firstTime = false;
-        }
+        	timers.add(t3);
         LOG.info("{}: M-WRITE {}", as, file);
         file.getParentFile().mkdirs();
         DicomOutputStream out = new DicomOutputStream(file);
@@ -363,7 +363,7 @@ public class GetSCU {
             try {
                 main.open();
                 List<String> argList = cl.getArgList(); // retrieve unrecognized options
-                long t1 = System.nanoTime();
+                t1 = System.nanoTime();
                 if (argList.isEmpty())
                     main.retrieve(); //this is the most common
                 else{
@@ -371,10 +371,7 @@ public class GetSCU {
                         main.retrieve(new File(arg));
                     }
                 }
-                long t2 = System.nanoTime();
-                timers.add(t1); //inicio retrieve
-                timers.add(t2); //fim retrive
-                timers.add(t3); //fim do scan e inicio do store da primeira imagem
+                t2 = System.nanoTime();
             } finally {
                 main.close();       
                 executorService.shutdown();
@@ -420,6 +417,8 @@ public class GetSCU {
 			bw.flush();
 			bw.close();
 		}
+		System.out.println("Start: " + t1);
+		System.out.println("End: "+ t2);
     }
 
     private static void configureServiceClass(GetSCU main, CommandLine cl)
