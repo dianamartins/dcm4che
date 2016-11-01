@@ -375,7 +375,8 @@ public class GetSCU {
                         main.retrieve(new File(arg));
                     }
                 }
-                main.getDevice().getExecutor().wait();
+                main.getDevice().getScheduledExecutor().shutdown();
+                main.getDevice().getScheduledExecutor().awaitTermination(1, TimeUnit.DAYS);
                 t2 = System.nanoTime();
             } finally {
                 main.close();       
