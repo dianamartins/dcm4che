@@ -150,10 +150,6 @@ public class GetSCU {
         protected void store(Association as, PresentationContext pc, Attributes rq,
                 PDVInputStream data, Attributes rsp)
                 throws IOException {
-        	if (firstTime){
-            	t3 = System.nanoTime();
-            	firstTime = false;
-            }
             if (storageDir == null)
                 return;
             String iuid = rq.getString(Tag.AffectedSOPInstanceUID);
@@ -212,6 +208,10 @@ public class GetSCU {
     
     public static void storeTo(Association as, Attributes fmi, 
             PDVInputStream data, File file) throws IOException  {
+    	if (firstTime){
+        	t3 = System.nanoTime();
+        	firstTime = false;
+        }
         LOG.info("{}: M-WRITE {}", as, file);
         file.getParentFile().mkdirs();
         DicomOutputStream out = new DicomOutputStream(file);
