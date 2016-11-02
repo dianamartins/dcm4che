@@ -54,7 +54,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.OptionBuilder;
@@ -81,7 +80,6 @@ import org.dcm4che3.net.pdu.ExtendedNegotiation;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.pdu.RoleSelection;
 import org.dcm4che3.net.service.BasicCStoreSCP;
-import org.dcm4che3.net.service.DicomService;
 import org.dcm4che3.net.service.DicomServiceException;
 import org.dcm4che3.net.service.DicomServiceRegistry;
 import org.dcm4che3.tool.common.CLIUtils;
@@ -142,8 +140,6 @@ public class GetSCU {
     private Association as;
     private static ArrayList <Long> timers = new ArrayList <Long>();
     private static String resultsFile = "/home/gsd/dcm4che/results/resultsGETSCU.txt";
-    private static boolean firstTime = true;
-    private static long t3;
     private static long t1;
     private static long t2;
 
@@ -211,11 +207,6 @@ public class GetSCU {
     
     public static void storeTo(Association as, Attributes fmi, 
             PDVInputStream data, File file) throws IOException  {
-        if (firstTime){
-        	t3 = System.nanoTime();
-        	timers.add(t3);
-        	firstTime = false;
-        }
         LOG.info("{}: M-WRITE {}", as, file);
         file.getParentFile().mkdirs();
         DicomOutputStream out = new DicomOutputStream(file);
@@ -225,6 +216,9 @@ public class GetSCU {
         } finally {
             SafeClose.close(out);
         }
+        long t2 = System.nanoTime();
+        long total = t2 - t1;
+        timers.add(total); 
     }
 
     private DicomServiceRegistry createServiceRegistry() {
@@ -367,7 +361,6 @@ public class GetSCU {
             try {
                 main.open();
                 List<String> argList = cl.getArgList(); // retrieve unrecognized options
-                t1 = System.nanoTime();
                 if (argList.isEmpty())
                     main.retrieve(); //this is the most common
                 else{
@@ -375,9 +368,6 @@ public class GetSCU {
                         main.retrieve(new File(arg));
                     }
                 }
-                main.getDevice().getScheduledExecutor().shutdown();
-                main.getDevice().getScheduledExecutor().awaitTermination(1, TimeUnit.DAYS);
-                t2 = System.nanoTime();
             } finally {
                 main.close();       
                 executorService.shutdown();
@@ -541,6 +531,7 @@ public class GetSCU {
     }
     
     private void retrieve(Attributes keys, DimseRSPHandler rspHandler) throws IOException, InterruptedException {
+    	t1 = System.nanoTime();
         as.cget(model.getCuid(), priority, keys, null, rspHandler);
     }
 
