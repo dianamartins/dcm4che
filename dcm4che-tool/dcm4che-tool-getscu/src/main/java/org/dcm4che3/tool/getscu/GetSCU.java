@@ -413,8 +413,6 @@ public class GetSCU {
 			bw.flush();
 			bw.close();
 		}
-		System.out.println("Start: " + t1);
-		System.out.println("End: "+ t2);
     }
 
     private static void configureServiceClass(GetSCU main, CommandLine cl)
