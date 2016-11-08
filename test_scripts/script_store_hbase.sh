@@ -22,7 +22,7 @@ done
 
 echo "Removing previous results"
 
-ssh -i ~/.ssh/gsd_private_key gsd@cloud85 rm /home/gsd/dcm4che/results/resultsSTORESCU.txt
+ssh -i ~/.ssh/gsd_private_key gsd@cloud85 rm /home/gsd/dcm4che/results/*
 
 echo "Creating new results file"
 
@@ -32,9 +32,9 @@ echo "Generating dataset"
 
 #echo $num_images
 
-#echo "Already done"
+echo "Already done"
 
-ssh -i ~/.ssh/gsd_private_key gsd@cloud85 python3 /home/gsd/dcm4che/GenerateDataset/generateDataset.py /home/gsd/dcm4che/GenerateDataset/preferences.xml 1 1000
+#ssh -i ~/.ssh/gsd_private_key gsd@cloud85 python3 /home/gsd/dcm4che/GenerateDataset/generateDataset.py /home/gsd/dcm4che/GenerateDataset/preferences.xml 20000 20000
 
 echo "Starting StoreSCP"
 
@@ -42,14 +42,14 @@ ssh -i ~/.ssh/gsd_private_key gsd@cloud84 nohup /home/gsd/dcm4che/dcm4che-assemb
 
 sleep 7
 
-#echo "Starting dstat"
+echo "Starting dstat"
 
 
-#for host in "${hosts[@]}" 
-#do
-#	echo $host
-#	ssh -i ~/.ssh/gsd_private_key gsd@$host nohup dstat -t -c -d -m -n -r --output $host.csv --noheaders > /dev/null &
-#done
+for host in "${hosts[@]}" 
+do
+	echo $host
+	ssh -i ~/.ssh/gsd_private_key gsd@$host nohup dstat -t -c -d -m -n -r --output $host.csv --noheaders > /dev/null &
+done
 
 echo "Starting StoreSCU"
 
@@ -61,24 +61,24 @@ echo "Test ended"
 
 # ssh -i ~/.ssh/gsd_private_key gsd@cloud84 ps aux | grep -i 1111[4] | awk {'print $2'} | kill
 
-#echo "Stoping dstat"
+echo "Stoping dstat"
 
-#for host in "${hosts[@]}" 
-#do
-#	echo $host
-#	ssh -i ~/.ssh/gsd_private_key gsd@$host pkill dstat
-#done
-#
-#echo "Copying result files to the localhost"
+for host in "${hosts[@]}" 
+do
+	echo $host
+	ssh -i ~/.ssh/gsd_private_key gsd@$host pkill dstat
+done
 
-#for host in "${hosts[@]}"
-#do
-#	echo $host
-#	scp -i ~/.ssh/gsd_private_key gsd@$host:/home/gsd/$host.csv ~/tests_results/store/
-#done
+echo "Copying result files to the localhost"
 
-#echo "resultsSTORESCU.txt"
+for host in "${hosts[@]}"
+do
+	echo $host
+	scp -i ~/.ssh/gsd_private_key gsd@$host:/home/gsd/$host.csv ~/tests_results/store2/run5.1
+done
 
-#scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/resultsSTORESCU.txt ~/tests_results/store/
+echo "resultsSTORESCU.txt"
+
+scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/resultsSTORESCU.txt ~/tests_results/store2/run5.1
 
 echo "Done!"

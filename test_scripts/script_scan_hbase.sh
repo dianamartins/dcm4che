@@ -18,11 +18,15 @@ done
 
 echo "Removing previous results"
 
-ssh -i ~/.ssh/gsd_private_key gsd@cloud85 rm /home/gsd/dcm4che/results/resultsGETSCU.txt
+ssh -i ~/.ssh/gsd_private_key gsd@cloud85 rm /home/gsd/dcm4che/results/*
 
 echo "Creating new results file"
 
 ssh -i ~/.ssh/gsd_private_key gsd@cloud85 touch /home/gsd/dcm4che/results/resultsGETSCU.txt
+
+echo "Deleting previously received images"
+
+ssh -i ~/.ssh/gsd_private_key gsd@cloud85 rm /home/gsd/1.*
 
 echo "Starting DCMQRSCP"
 
@@ -41,7 +45,6 @@ done
 echo "Starting GetSCU"
 
 ssh -i ~/.ssh/gsd_private_key gsd@cloud85 /home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/getscu -c DCMQRSCP@cloud84:11113 -L STUDY -m StudyInstanceUID=1 PatientWeight=70
-mv /home/gsd/dcm4che/results/resultsGETSCU.txt /home/gsd/dcm4che/results/scan$i.txt
 
 echo "Test ended"
 
@@ -62,11 +65,11 @@ echo "Copying result files to the localhost"
 for host in "${hosts[@]}"
 do
 	echo $host
-	scp -i ~/.ssh/gsd_private_key gsd@$host:/home/gsd/$host.csv ~/tests_results/scan/
+	scp -i ~/.ssh/gsd_private_key gsd@$host:/home/gsd/$host.csv ~/tests_results/scan3/run5.10/
 done
 
 echo "Copying scan results"
 
-scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/* ~/tests_results/scan/
+scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/* ~/tests_results/scan3/run5.10/
 
 echo "Done!"
