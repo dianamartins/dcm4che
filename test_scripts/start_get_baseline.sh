@@ -41,6 +41,6 @@ ssh -i ~/.ssh/gsd_private_key gsd@cloud84 nohup dstat -t -c -d -m -n -r --output
 
 echo "Starting GET test"
 
-ssh -i ~/.ssh/gsd_private_key gsd@cloud85 nohup /home/gsd/dcm4che/test_scripts/script_get_hbase.sh 
+ssh -i ~/.ssh/gsd_private_key gsd@cloud85 nohup /home/gsd/dcm4che/test_scripts/script_get_baseline.sh 
 
 echo "Test ended. Done!!!!"
