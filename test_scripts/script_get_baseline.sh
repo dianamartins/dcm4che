@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-runs=1000 # mudar
+runs=5000 # mudar
 
 max=$(ls -l /home/gsd/dcm4che/currentReplicas/*.dcm | wc -l)
 
@@ -23,9 +23,11 @@ do
 	#fi
 	#echo "Image $f chosen"
 	sop=$(/home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/dcmdump /home/gsd/dcm4che/currentReplicas/$i.dcm | grep '(0008,0018)'| grep -o '\[[0-9.]*\]' | grep -o '[0-9.]*')
+	study=$(/home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/dcmdump /home/gsd/dcm4che/currentReplicas/$i.dcm | grep '(0020,000D)'| grep -o '\[[0-9.]*\]' | grep -o '[0-9.]*')
+	series=$(/home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/dcmdump /home/gsd/dcm4che/currentReplicas/$i.dcm | grep '(0020,000E)'| grep -o '\[[0-9.]*\]' | grep -o '[0-9.]*')
 
 	echo "Getting $sop"
-	/home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/getscu -c DCMQRSCP@cloud84:11113 -L IMAGE -m SOPInstanceUID=$sop StudyInstanceUID=1 SeriesInstanceUID=1  #>> query.log
+	/home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/getscu -c DCMQRSCP@cloud84:11113 -L IMAGE -m SOPInstanceUID=$sop StudyInstanceUID=$study SeriesInstanceUID=$series  #>> query.log
 	mv /home/gsd/dcm4che/results/resultsGETSCU.txt /home/gsd/dcm4che/results/store$i.txt
 	#cat query.log	
 done
