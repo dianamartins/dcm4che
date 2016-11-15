@@ -3,7 +3,6 @@
 *.iml
 .settings/
 .idea/
-target/
 *.tmp
 *.tar
 *.zip
