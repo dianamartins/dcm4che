@@ -264,7 +264,6 @@ public abstract class HBaseStore extends BasicCStoreSCP {
 		}
 		if (!patientWeight.equals(null)) {
            System.out.println("patientWeight "+this.patientWeight);
-          
            System.out.println("patientWeight "+new BigInteger(this.patientWeight.getBytes()));
 			put.add(patientCf, "Weight".getBytes(), patientWeight.getBytes());
 			put.setAttribute("protected:" + "Patient" + ":Weight", "".getBytes());
