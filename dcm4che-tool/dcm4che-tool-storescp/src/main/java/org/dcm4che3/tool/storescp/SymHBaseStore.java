@@ -5,7 +5,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.HTableInterface;
-//import pt.uminho.haslab.safecloudclient.shareclient.SymColTable;
+import pt.uminho.haslab.safecloudclient.shareclient.SymColTable;
 
 
 public class SymHBaseStore extends HBaseStore{
@@ -16,8 +16,7 @@ public class SymHBaseStore extends HBaseStore{
 
   @Override
   public HTableInterface createTableInterface(Configuration conf, String tableName) throws Exception {
-    //return new SymColTable(conf, tableName);
-	  return null;
+	  return new SymColTable(conf, tableName);
   }
   
 }

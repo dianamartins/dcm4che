@@ -8,10 +8,9 @@ ssh -i ~/.ssh/gsd_private_key gsd@cloud84 pkill dstat
 
 echo "Copying previous dstats to localhost"
 
-scp -i ~/.ssh/gsd_private_key gsd@cloud84:/home/gsd/cloud84.csv ~/tests_results/baseline/get/run1.1/
+scp -i ~/.ssh/gsd_private_key gsd@cloud84:/home/gsd/cloud84.csv ~/tests_results/baseline/get/run3.10/
 
-scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/cloud85.csv ~/tests_results/baseline/get/run1.1/
-
+scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/cloud85.csv ~/tests_results/baseline/get/run3.10/
 
 echo "Deleting previous dstats"
 
@@ -21,7 +20,7 @@ ssh -i ~/.ssh/gsd_private_key gsd@cloud85 rm /home/gsd/cloud85.csv
 
 echo "Copying previous results to localhost"
 
-scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/* ~/tests_results/baseline/get/run1.1/
+scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/* ~/tests_results/baseline/get/run3.10/
 
 echo "Deleting previous results"
 

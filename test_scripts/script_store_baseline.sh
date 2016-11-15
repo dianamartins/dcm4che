@@ -4,11 +4,11 @@ echo "Teste para store baseline"
 
 echo "Deleting previous currentReplicas"
 
-ssh -i ~/.ssh/gsd_private_key gsd@cloud85 rm /home/gsd/dcm4che/currentReplicas/
+ssh -i ~/.ssh/gsd_private_key gsd@cloud85 rm /home/gsd/dcm4che/currentReplicas/*
 
-echo "Creating new currentReplicas directory"
+#echo "Creating new currentReplicas directory"
 
-ssh -i ~/.ssh/gsd_private_key gsd@cloud85 mkdir /home/gsd/dcm4che/currentReplicas/
+#ssh -i ~/.ssh/gsd_private_key gsd@cloud85 mkdir /home/gsd/dcm4che/currentReplicas/
 
 echo "Copying files to currentReplicas"	
 
@@ -17,7 +17,7 @@ runs=1000
 for i in $(seq $runs)
 do
 	echo $i 
-	ssh -i ~/.ssh/gsd_private_key gsd@cloud85 cp /home/gsd/dcm4che/replicas/$i.dcm /home/gsd/dcm4che/currentReplicas/
+	ssh -i ~/.ssh/gsd_private_key gsd@cloud85 cp /home/gsd/dcm4che/replicas2/$i.dcm /home/gsd/dcm4che/currentReplicas/
 done 
 
 # # ADAPTAR DIRETORIAS
@@ -26,11 +26,11 @@ done
 
 # num_images=10 # alterar
 
-#echo "Generating dataset"
+# echo "Generating dataset"
 
-# #echo $num_images
+# # #echo $num_images
 
-#ssh -i ~/.ssh/gsd_private_key gsd@cloud85 python3 /home/gsd/dcm4che/GenerateDataset/generateDataset.py /home/gsd/dcm4che/GenerateDataset/preferences.xml 1 20000
+# ssh -i ~/.ssh/gsd_private_key gsd@cloud85 python3 /home/gsd/dcm4che/GenerateDataset/generateDataset.py /home/gsd/dcm4che/GenerateDataset/preferences.xml 1 20000
 
 echo "Cleaning images database"
 

@@ -16,7 +16,6 @@ public class DefaultHBaseStore extends HBaseStore{
 
 	@Override
 	public HTableInterface createTableInterface(Configuration conf, String tableName) throws Exception {
-		return new HTable(conf, tableName);
-		
+		return new HTable(conf, tableName);		
 	}
 }

@@ -103,6 +103,9 @@ import java.io.FileNotFoundException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -115,8 +118,10 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.CompareFilter;
 import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
-//import pt.uminho.haslab.safecloudclient.shareclient.PrivateColumnsSharedTable;
-//import pt.uminho.haslab.smhbase.exceptions.InvalidNumberOfBits;
+import pt.uminho.haslab.safecloudclient.shareclient.EncryptionService;
+import pt.uminho.haslab.safecloudclient.shareclient.SymColTable;
+import pt.uminho.haslab.safecloudclient.shareclient.DecryptionService;
+import pt.uminho.haslab.smhbase.exceptions.InvalidNumberOfBits;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
@@ -844,9 +849,12 @@ public class DcmQRSCP<T extends InstanceLocator> {
     
     // Método alterado
     public List<T> calculateHBaseMatches(Attributes keys)
-    		throws DicomServiceException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, FileNotFoundException, InvalidAlgorithmParameterException { //throw InvalidNumberOfBits
+    		throws DicomServiceException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, FileNotFoundException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException { //throw InvalidNumberOfBits
+    	
+    	EncryptionService encService = new EncryptionService(new byte[16], new byte[16]);
+
     	System.out.println("*************Calculating HBase matches*********");
-	List<T> list = new ArrayList<T>();
+    	List<T> list = new ArrayList<T>();
  
     	if (keys.contains(Tag.StudyInstanceUID)){
     		studyInstanceUID = keys.getString(Tag.StudyInstanceUID);
@@ -867,13 +875,13 @@ public class DcmQRSCP<T extends InstanceLocator> {
     	}
     	if (keys.contains(Tag.PatientBirthDate)){
     		patientBirthDate = keys.getDate(Tag.PatientBirthDate).getTime();
-    		System.out.println("****************Found patient birth date!***********");
     	}
     	if (keys.contains(Tag.PatientSex)){
     		patientGender = keys.getString(Tag.PatientSex);
     	}
     	if (keys.contains(Tag.PatientWeight)){
     		patientWeight = keys.getString(Tag.PatientWeight);
+    		
     	}
     	if (keys.contains(Tag.AdditionalPatientHistory)){
     		patientHistory = keys.getString(Tag.AdditionalPatientHistory);
@@ -936,8 +944,8 @@ public class DcmQRSCP<T extends InstanceLocator> {
     		manufacturer = keys.getString(Tag.Manufacturer);
     	}
 
-    	HTableInterface tableInterface = new HTable (confHBase, "DicomTable");
-        //HTableInterface tableInterface = new SymColTable(confHBase, "DircomTable");
+    	//HTableInterface tableInterface = new HTable (confHBase, "DicomTable");
+        HTableInterface tableInterface = new SymColTable(confHBase, "DicomTable");
        //HTableInterface tableInterface =  new PrivateColumnsSharedTable(confHBase, "DicomTable");
 
         if (SOPInstanceUID != null){
@@ -978,7 +986,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
     		}
     		else if (patientWeight != null){
     			filter = new SingleColumnValueFilter("Patient".getBytes(), "Weight".getBytes(), CompareFilter.CompareOp.EQUAL, patientWeight.getBytes());
-    			scan.setAttribute("protected: " + "Patient" + ":Weight", "".getBytes());
+    			scan.setAttribute("protected: " + "Patient" + ":Weight", "".getBytes());	
     		}
     		else if (patientHistory != null){
     			filter = new SingleColumnValueFilter("Patient".getBytes(), "MedicalHistory".getBytes(), CompareFilter.CompareOp.EQUAL, patientHistory.getBytes());
