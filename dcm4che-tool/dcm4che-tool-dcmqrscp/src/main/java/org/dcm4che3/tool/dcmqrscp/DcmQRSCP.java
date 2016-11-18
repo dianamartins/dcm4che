@@ -947,7 +947,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
     	//HTableInterface tableInterface = new HTable (confHBase, "DicomTable");
         HTableInterface tableInterface = new SymColTable(confHBase, "DicomTable");
        //HTableInterface tableInterface =  new PrivateColumnsSharedTable(confHBase, "DicomTable");
-
+        System.out.println("*********"+SOPInstanceUID+"**********");
         if (SOPInstanceUID != null){
 		System.out.println("*****Starting get operation******");
     		Get get = new Get (SOPInstanceUID.getBytes());
