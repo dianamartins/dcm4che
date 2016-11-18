@@ -32,28 +32,46 @@ echo "Generating dataset"
 
 #echo $num_images
 
-echo "Already done"
+# echo "Already done"
+
+echo "Deleting previous currentReplicas"
+
+ssh -i ~/.ssh/gsd_private_key gsd@cloud85 rm /home/gsd/dcm4che/currentReplicas/*
+
+#echo "Creating new currentReplicas directory"
+
+#ssh -i ~/.ssh/gsd_private_key gsd@cloud85 mkdir /home/gsd/dcm4che/currentReplicas/
+
+echo "Copying files to currentReplicas"	
+
+runs=5000
+
+for i in $(seq $runs)
+do
+	echo $i 
+	ssh -i ~/.ssh/gsd_private_key gsd@cloud85 cp /home/gsd/dcm4che/replicas3/$i.dcm /home/gsd/dcm4che/currentReplicas/
+done 
 
 #ssh -i ~/.ssh/gsd_private_key gsd@cloud85 python3 /home/gsd/dcm4che/GenerateDataset/generateDataset.py /home/gsd/dcm4che/GenerateDataset/preferences.xml 20000 20000
 
-echo "Starting StoreSCP"
+# echo "Starting StoreSCP"
 
-ssh -i ~/.ssh/gsd_private_key gsd@cloud84 nohup /home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/storescp -b STORESCP:11114 --directory /home/gsd/dcm4che/images_database -f /home/gsd/dcm4che/def-hbase-client.xml &
+# ssh -i ~/.ssh/gsd_private_key gsd@cloud84 nohup /home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/storescp -b STORESCP:11114 --directory /home/gsd/dcm4che/images_database -f /home/gsd/dcm4che/def-hbase-client.xml &
 
-sleep 7
+# sleep 7
 
-echo "Starting dstat"
+# echo "Starting dstat"
 
 
-for host in "${hosts[@]}" 
-do
-	echo $host
-	ssh -i ~/.ssh/gsd_private_key gsd@$host nohup dstat -t -c -d -m -n -r --output $host.csv --noheaders > /dev/null &
-done
+# for host in "${hosts[@]}" 
+# do
+# 	echo $host
+# 	ssh -i ~/.ssh/gsd_private_key gsd@$host nohup dstat -t -c -d -m -n -r --output $host.csv --noheaders > /dev/null &
+# done
 
 echo "Starting StoreSCU"
 
-ssh -i ~/.ssh/gsd_private_key gsd@cloud85 /home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/storescu -c STORESCP@cloud84:11114 /home/gsd/dcm4che/replicas
+ssh -i ~/.ssh/gsd_private_key gsd@cloud85 /home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/storescu -c STORESCP@cloud84:11114 /home/gsd/dcm4che/currentReplicas
 
 echo "Test ended"
 
@@ -61,24 +79,24 @@ echo "Test ended"
 
 # ssh -i ~/.ssh/gsd_private_key gsd@cloud84 ps aux | grep -i 1111[4] | awk {'print $2'} | kill
 
-echo "Stoping dstat"
+# echo "Stoping dstat"
 
-for host in "${hosts[@]}" 
-do
-	echo $host
-	ssh -i ~/.ssh/gsd_private_key gsd@$host pkill dstat
-done
+# for host in "${hosts[@]}" 
+# do
+# 	echo $host
+# 	ssh -i ~/.ssh/gsd_private_key gsd@$host pkill dstat
+# done
 
-echo "Copying result files to the localhost"
+# echo "Copying result files to the localhost"
 
-for host in "${hosts[@]}"
-do
-	echo $host
-	scp -i ~/.ssh/gsd_private_key gsd@$host:/home/gsd/$host.csv ~/tests_results/store2/run5.1
-done
+# for host in "${hosts[@]}"
+# do
+# 	echo $host
+# 	scp -i ~/.ssh/gsd_private_key gsd@$host:/home/gsd/$host.csv ~/tests_results/sym/put/run5.10
+# done
 
-echo "resultsSTORESCU.txt"
+# echo "resultsSTORESCU.txt"
 
-scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/resultsSTORESCU.txt ~/tests_results/store2/run5.1
+# scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/resultsSTORESCU.txt ~/tests_results/sym/put/run5.10
 
 echo "Done!"

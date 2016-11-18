@@ -987,6 +987,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
     		else if (patientWeight != null){
     			filter = new SingleColumnValueFilter("Patient".getBytes(), "Weight".getBytes(), CompareFilter.CompareOp.EQUAL, patientWeight.getBytes());
     			scan.setAttribute("protected: " + "Patient" + ":Weight", "".getBytes());	
+    			System.out.println("**********Found weight********");
     		}
     		else if (patientHistory != null){
     			filter = new SingleColumnValueFilter("Patient".getBytes(), "MedicalHistory".getBytes(), CompareFilter.CompareOp.EQUAL, patientHistory.getBytes());

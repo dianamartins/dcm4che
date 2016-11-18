@@ -28,11 +28,11 @@ echo "Deleting previously received images"
 
 ssh -i ~/.ssh/gsd_private_key gsd@cloud85 rm /home/gsd/1.*
 
-echo "Starting DCMQRSCP"
+# echo "Starting DCMQRSCP"
 
-ssh -i ~/.ssh/gsd_private_key gsd@cloud84 nohup /home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/dcmqrscp -b DCMQRSCP:11113 --dicomdir /home/gsd/dcm4che/DICOMDIR -f /home/gsd/dcm4che/def-hbase-client.xml -d /home/gsd/dcm4che/images_database/ &
+# ssh -i ~/.ssh/gsd_private_key gsd@cloud84 nohup /home/gsd/dcm4che/dcm4che-assembly/target/dcm4che-3.3.8-SNAPSHOT-bin/dcm4che-3.3.8-SNAPSHOT/bin/dcmqrscp -b DCMQRSCP:11113 --dicomdir /home/gsd/dcm4che/DICOMDIR -f /home/gsd/dcm4che/def-hbase-client.xml -d /home/gsd/dcm4che/images_database/ &
 
-sleep 7
+# sleep 7
 
 echo "Starting dstat"
 
@@ -65,11 +65,11 @@ echo "Copying result files to the localhost"
 for host in "${hosts[@]}"
 do
 	echo $host
-	scp -i ~/.ssh/gsd_private_key gsd@$host:/home/gsd/$host.csv ~/tests_results/scan3/run5.10/
+	scp -i ~/.ssh/gsd_private_key gsd@$host:/home/gsd/$host.csv ~/tests_results/sym/scan/run3.1/
 done
 
 echo "Copying scan results"
 
-scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/* ~/tests_results/scan3/run5.10/
+scp -i ~/.ssh/gsd_private_key gsd@cloud85:/home/gsd/dcm4che/results/* ~/tests_results/sym/scan/run3.1/
 
 echo "Done!"
