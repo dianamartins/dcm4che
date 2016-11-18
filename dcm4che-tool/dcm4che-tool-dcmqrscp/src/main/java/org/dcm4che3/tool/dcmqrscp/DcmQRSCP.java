@@ -987,7 +987,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
     		}
     		else if (patientWeight != null){
     			filter = new SingleColumnValueFilter("Patient".getBytes(), "Weight".getBytes(), CompareFilter.CompareOp.EQUAL, patientWeight.getBytes());
-    			scan.setAttribute("protected: " + "Patient" + ":Weight", "".getBytes());	
+    			scan.setAttribute("protected:Patient:Weight", "".getBytes());	
     			System.out.println("**********Found weight********");
     		}
     		else if (patientHistory != null){
@@ -1045,6 +1045,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
     		else if (seriesDesc != null){
     			filter = new SingleColumnValueFilter("Series".getBytes(), "Description".getBytes(), CompareFilter.CompareOp.EQUAL, seriesDesc.getBytes());
     		}
+    		System.out.println(scan.getAttribute("protected:Patient:Weight"));
     		scan.setFilter(filter);
     		ResultScanner scanner = tableInterface.getScanner(scan);
     		for (Result res = scanner.next(); res != null; res = scanner.next()){
