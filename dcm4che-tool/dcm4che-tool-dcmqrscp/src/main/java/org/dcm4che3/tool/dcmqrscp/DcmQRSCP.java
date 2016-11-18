@@ -970,6 +970,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
     		}
     	}else{
     		Scan scan = new Scan();
+    		System.out.println("************patient weight: "+patientWeight+"*********");
     		if (patientBirthDate != null){
     			filter = new SingleColumnValueFilter("Patient".getBytes(), "BirthDate".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(patientBirthDate));
     			scan.setAttribute("protected: "+"Patient" + ":BirthDate", "".getBytes());
