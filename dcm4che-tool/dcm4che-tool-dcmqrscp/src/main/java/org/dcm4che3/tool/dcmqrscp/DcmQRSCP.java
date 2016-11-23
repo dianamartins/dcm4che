@@ -265,14 +265,6 @@ public class DcmQRSCP<T extends InstanceLocator> {
 				} catch (Exception ex) {
 					LOG.debug(ex.getMessage());
 				} 
-				try {
-					matches = DcmQRSCP.this.calculateHBaseMatches(keys);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (Exception ex) {
-					LOG.debug(ex.getMessage());
-				} 
 			}
 			//            matches = DcmQRSCP.this
 			//                .calculateMatches(keys);
