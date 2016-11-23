@@ -184,6 +184,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
 	String transferSyntax;
 	Filter filter;
 	private static String imagesFolder;
+        private static HTableInterface tableInterface;
 
 
 	private final class CFindSCPImpl extends BasicCFindSCP {
@@ -606,8 +607,8 @@ public class DcmQRSCP<T extends InstanceLocator> {
 	public static void main(String[] args) {
 		try {
 			//String [] myargs = {"-b","DCMQRSCP:11113","--dicomdir","/Users/dianamartins/testat-getscu/DICOMDIR","--storage-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--retrieve-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--query-sop-classes","/Users/dianamartins/query-sop-classes.properties","--ae-config","/Users/dianamartins/ae.properties"}; 
-			//String [] myargs = {"-b","DCMQRSCP:11116","-f","def-hbase-client.xml", "--storage-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--retrieve-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--query-sop-classes","/Users/dianamartins/query-sop-classes.properties","--ae-config","/Users/dianamartins/ae.properties","--dicomdir","/Users/dianamartins/apoio/apoio2/DICOMDIR","-d","/Users/dianamartins/recebidasHBaseSCP"};
-			CommandLine cl = parseComandLine(args);
+			String [] myargs = {"-b","DCMQRSCP:11116","-f","def-hbase-client.xml", "--storage-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--retrieve-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--query-sop-classes","/Users/dianamartins/query-sop-classes.properties","--ae-config","/Users/dianamartins/ae.properties","--dicomdir","/Users/dianamartins/apoio/apoio2/DICOMDIR","-d","/Users/dianamartins/images_databases/"};
+			CommandLine cl = parseComandLine(myargs);
 			DcmQRSCP<InstanceLocator> main = new DcmQRSCP<InstanceLocator>();
 			if (cl.hasOption("hbase")) {
 				System.out.println("************* Option -f recognized, usingHBase=true ***********");
@@ -621,6 +622,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
 				confHBase.set("hbase.zookeeper.property.clientPort","2181");
 				//confHBase.addResource(cl.getOptionValue("hbase"));
 				imagesFolder = cl.getOptionValue("imagesFolder");
+                                tableInterface = new SymColTable(confHBase, "DicomTable");
 			}else{
 				usingHBase = false;
 			}
@@ -642,6 +644,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
 			main.device.setScheduledExecutor(scheduledExecutorService);
 			main.device.setExecutor(executorService);
 			main.device.bindConnections();
+                        //tableInterface.close();
 		} catch (ParseException e) {
 			System.err.println("dcmqrscp: " + e.getMessage());
 			System.err.println(rb.getString("try"));
@@ -939,7 +942,6 @@ public class DcmQRSCP<T extends InstanceLocator> {
 		}
 
 		//HTableInterface tableInterface = new HTable (confHBase, "DicomTable");
-		HTableInterface tableInterface = new SymColTable(confHBase, "DicomTable");
 		//HTableInterface tableInterface =  new PrivateColumnsSharedTable(confHBase, "DicomTable");
 		System.out.println("*********"+SOPInstanceUID+"**********");
 		if (SOPInstanceUID != null){
@@ -948,7 +950,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
 			LOG.debug("GETXY instance UID "+ SOPInstanceUID);
 			get.setAttribute("protected: "+"Patient" + ":BirthDate", "".getBytes());
 			get.setAttribute("protected: " + "Patient" + ":Name", "".getBytes());
-
+                        System.out.println("*****table interface*******"+tableInterface);
 			long t3 = System.nanoTime();
 			Result res = tableInterface.get(get);
 			long t4 = System.nanoTime();
@@ -971,8 +973,8 @@ public class DcmQRSCP<T extends InstanceLocator> {
 				long t8 = System.nanoTime();
 				Long instance_time = t8-t7;
 				list.add((T) resInstance);
-				File results_read = new File("/home/gsd/dcm4che/results/read" + now.toString() + ".txt");
-				File results_instance = new File("/home/gsd/dcm4che/results/instance" + now.toString() + ".txt");
+				/**File results_read = new File("/Users/dianamartins/resultados/read" + now.toString() + ".txt");
+				File results_instance = new File("/Users/dianamartins/resultados/instance" + now.toString() + ".txt");
 				if (!results_read.exists()){
 					try {
 						results_read.createNewFile();
@@ -1028,9 +1030,9 @@ public class DcmQRSCP<T extends InstanceLocator> {
 					}
 				}
 				bw_instance.flush();
-				bw_instance.close();
+				bw_instance.close();**/
 			}
-			File results_get = new File("/home/gsd/dcm4che/results/get" + now.toString() + ".txt");
+			/**File results_get = new File("/Users/dianamartins/resultados/get" + now.toString() + ".txt");
 			if (!results_get.exists()){
 				try {
 					results_get.createNewFile();
@@ -1058,7 +1060,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
 				}
 			}
 			bw_get.flush();
-			bw_get.close();
+			bw_get.close();**/
 		}else{
 			Scan scan = new Scan();
 			System.out.println("************patient weight: "+patientWeight+"*********");
@@ -1151,7 +1153,6 @@ public class DcmQRSCP<T extends InstanceLocator> {
 				list.add((T) resInstance);
 			}
 		}
-		tableInterface.close();
 		System.out.println("*************Closing table interface**************");
 		int num_res= list.size();
 		System.out.println("***************Number of matches: " + num_res + "*************");
