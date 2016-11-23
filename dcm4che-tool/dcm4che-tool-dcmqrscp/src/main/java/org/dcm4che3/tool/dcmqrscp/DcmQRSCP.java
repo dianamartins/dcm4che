@@ -38,6 +38,7 @@
 
 package org.dcm4che3.tool.dcmqrscp;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -100,6 +101,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.primitives.Longs;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -128,36 +130,36 @@ import pt.uminho.haslab.smhbase.exceptions.InvalidNumberOfBits;
  */
 public class DcmQRSCP<T extends InstanceLocator> {
 
-    static final Logger LOG = LoggerFactory.getLogger(DcmQRSCP.class);
+	static final Logger LOG = LoggerFactory.getLogger(DcmQRSCP.class);
 
-    private static final String[] PATIENT_ROOT_LEVELS = { "PATIENT", "STUDY",
-            "SERIES", "IMAGE" };
-    private static final String[] STUDY_ROOT_LEVELS = { "STUDY", "SERIES",
-            "IMAGE" };
-    private static final String[] PATIENT_STUDY_ONLY_LEVELS = { "PATIENT",
-            "STUDY" };
-    private static ResourceBundle rb = ResourceBundle
-            .getBundle("org.dcm4che3.tool.dcmqrscp.messages");
+	private static final String[] PATIENT_ROOT_LEVELS = { "PATIENT", "STUDY",
+			"SERIES", "IMAGE" };
+	private static final String[] STUDY_ROOT_LEVELS = { "STUDY", "SERIES",
+	"IMAGE" };
+	private static final String[] PATIENT_STUDY_ONLY_LEVELS = { "PATIENT",
+	"STUDY" };
+	private static ResourceBundle rb = ResourceBundle
+			.getBundle("org.dcm4che3.tool.dcmqrscp.messages");
 
-    private Device device = new Device("dcmqrscp");
-    private ApplicationEntity ae = new ApplicationEntity("*");
-    private final Connection conn = new Connection();
+	private Device device = new Device("dcmqrscp");
+	private ApplicationEntity ae = new ApplicationEntity("*");
+	private final Connection conn = new Connection();
 
-    private File storageDir;
-    private File dicomDir;
-    private AttributesFormat filePathFormat;
-    private RecordFactory recFact;
-    private String availability;
-    private boolean stgCmtOnSameAssoc;
-    private boolean sendPendingCGet;
-    private int sendPendingCMoveInterval;
-    private final FilesetInfo fsInfo = new FilesetInfo();
-    private DicomDirReader ddReader;
-    private DicomDirWriter ddWriter;
-    private HashMap<String, Connection> remoteConnections = new HashMap<String, Connection>();
-    private static boolean usingHBase;
-    private static Configuration confHBase;
-   	String studyInstanceUID;
+	private File storageDir;
+	private File dicomDir;
+	private AttributesFormat filePathFormat;
+	private RecordFactory recFact;
+	private String availability;
+	private boolean stgCmtOnSameAssoc;
+	private boolean sendPendingCGet;
+	private int sendPendingCMoveInterval;
+	private final FilesetInfo fsInfo = new FilesetInfo();
+	private DicomDirReader ddReader;
+	private DicomDirWriter ddWriter;
+	private HashMap<String, Connection> remoteConnections = new HashMap<String, Connection>();
+	private static boolean usingHBase;
+	private static Configuration confHBase;
+	String studyInstanceUID;
 	String seriesInstanceUID;
 	String SOPInstanceUID;
 	String patientID;
@@ -181,893 +183,990 @@ public class DcmQRSCP<T extends InstanceLocator> {
 	String seriesDesc;
 	String transferSyntax;
 	Filter filter;
-    private static String imagesFolder;
-    
-    
-    private final class CFindSCPImpl extends BasicCFindSCP {
+	private static String imagesFolder;
 
-        private final String[] qrLevels;
-        private final QueryRetrieveLevel rootLevel;
 
-        public CFindSCPImpl(String sopClass, String... qrLevels) {
-            super(sopClass);
-            this.qrLevels = qrLevels;
-            this.rootLevel = QueryRetrieveLevel.valueOf(qrLevels[0]);
-        }
+	private final class CFindSCPImpl extends BasicCFindSCP {
 
-        @Override
-        protected QueryTask calculateMatches(Association as,
-                PresentationContext pc, Attributes rq, Attributes keys)
-                throws DicomServiceException {
-            QueryRetrieveLevel level = QueryRetrieveLevel.valueOf(keys,
-                    qrLevels);
-            level.validateQueryKeys(keys, rootLevel,
-                    rootLevel == QueryRetrieveLevel.IMAGE || relational(as, rq));
-            DicomDirReader ddr = getDicomDirReader();
-            String availability = getInstanceAvailability();
-            switch (level) {
-            case PATIENT:
-                return new PatientQueryTask(as, pc, rq, keys, ddr, availability);
-            case STUDY:
-                return new StudyQueryTask(as, pc, rq, keys, ddr, availability);
-            case SERIES:
-                return new SeriesQueryTask(as, pc, rq, keys, ddr, availability);
-            case IMAGE:
-                return new InstanceQueryTask(as, pc, rq, keys, ddr,
-                        availability);
-            default:
-                assert true;
-            }
-            throw new AssertionError();
-        }
+		private final String[] qrLevels;
+		private final QueryRetrieveLevel rootLevel;
 
-        private boolean relational(Association as, Attributes rq) {
-            String cuid = rq.getString(Tag.AffectedSOPClassUID);
-            ExtendedNegotiation extNeg = as.getAAssociateAC()
-                    .getExtNegotiationFor(cuid);
-            return QueryOption.toOptions(extNeg).contains(
-                    QueryOption.RELATIONAL);
-        }
-    }
+		public CFindSCPImpl(String sopClass, String... qrLevels) {
+			super(sopClass);
+			this.qrLevels = qrLevels;
+			this.rootLevel = QueryRetrieveLevel.valueOf(qrLevels[0]);
+		}
 
-    private final class CGetSCPImpl extends BasicCGetSCP {
+		@Override
+		protected QueryTask calculateMatches(Association as,
+				PresentationContext pc, Attributes rq, Attributes keys)
+						throws DicomServiceException {
+			QueryRetrieveLevel level = QueryRetrieveLevel.valueOf(keys,
+					qrLevels);
+			level.validateQueryKeys(keys, rootLevel,
+					rootLevel == QueryRetrieveLevel.IMAGE || relational(as, rq));
+			DicomDirReader ddr = getDicomDirReader();
+			String availability = getInstanceAvailability();
+			switch (level) {
+			case PATIENT:
+				return new PatientQueryTask(as, pc, rq, keys, ddr, availability);
+			case STUDY:
+				return new StudyQueryTask(as, pc, rq, keys, ddr, availability);
+			case SERIES:
+				return new SeriesQueryTask(as, pc, rq, keys, ddr, availability);
+			case IMAGE:
+				return new InstanceQueryTask(as, pc, rq, keys, ddr,
+						availability);
+			default:
+				assert true;
+			}
+			throw new AssertionError();
+		}
 
-        private final String[] qrLevels;
-        private final boolean withoutBulkData;
-        private final QueryRetrieveLevel rootLevel;
+		private boolean relational(Association as, Attributes rq) {
+			String cuid = rq.getString(Tag.AffectedSOPClassUID);
+			ExtendedNegotiation extNeg = as.getAAssociateAC()
+					.getExtNegotiationFor(cuid);
+			return QueryOption.toOptions(extNeg).contains(
+					QueryOption.RELATIONAL);
+		}
+	}
 
-        public CGetSCPImpl(String sopClass, String... qrLevels) {
-            super(sopClass);
-            this.qrLevels = qrLevels;
-            this.withoutBulkData = qrLevels.length == 0;
-            this.rootLevel = withoutBulkData ? QueryRetrieveLevel.IMAGE
-                    : QueryRetrieveLevel.valueOf(qrLevels[0]);
-        }
+	private final class CGetSCPImpl extends BasicCGetSCP {
 
-        @Override
-        protected RetrieveTask calculateMatches(Association as,
-                PresentationContext pc, Attributes rq, Attributes keys)
-                throws DicomServiceException {
-            QueryRetrieveLevel level = withoutBulkData ? QueryRetrieveLevel.IMAGE
-                    : QueryRetrieveLevel.valueOf(keys, qrLevels);
-            level.validateRetrieveKeys(keys, rootLevel, relational(as, rq));
-            List<T> matches = new ArrayList<T>();
-            if (!usingHBase){
-            	System.out.println("************ Begining cycle without hbase*********");
-            	matches = DcmQRSCP.this
-                        .calculateMatches(keys);
-            }else{
-            	System.out.println("************ Begining cycle with hbase ************");
-              try {
-                matches = DcmQRSCP.this.calculateHBaseMatches(keys);
-              } catch (Exception ex) {
-                LOG.debug(ex.getMessage());
-              } 
-            	try {
+		private final String[] qrLevels;
+		private final boolean withoutBulkData;
+		private final QueryRetrieveLevel rootLevel;
+
+		public CGetSCPImpl(String sopClass, String... qrLevels) {
+			super(sopClass);
+			this.qrLevels = qrLevels;
+			this.withoutBulkData = qrLevels.length == 0;
+			this.rootLevel = withoutBulkData ? QueryRetrieveLevel.IMAGE
+					: QueryRetrieveLevel.valueOf(qrLevels[0]);
+		}
+
+		@Override
+		protected RetrieveTask calculateMatches(Association as,
+				PresentationContext pc, Attributes rq, Attributes keys)
+						throws DicomServiceException {
+			QueryRetrieveLevel level = withoutBulkData ? QueryRetrieveLevel.IMAGE
+					: QueryRetrieveLevel.valueOf(keys, qrLevels);
+			level.validateRetrieveKeys(keys, rootLevel, relational(as, rq));
+			List<T> matches = new ArrayList<T>();
+			if (!usingHBase){
+				System.out.println("************ Begining cycle without hbase*********");
+				matches = DcmQRSCP.this
+						.calculateMatches(keys);
+			}else{
+				System.out.println("************ Begining cycle with hbase ************");
+				try {
+					matches = DcmQRSCP.this.calculateHBaseMatches(keys);
+				} catch (Exception ex) {
+					LOG.debug(ex.getMessage());
+				} 
+				try {
 					matches = DcmQRSCP.this.calculateHBaseMatches(keys);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (Exception ex) {
-                  LOG.debug(ex.getMessage());
-                } 
-            }
-//            matches = DcmQRSCP.this
-//                .calculateMatches(keys);
-            if (matches.isEmpty())
-                return null;
+					LOG.debug(ex.getMessage());
+				} 
+			}
+			//            matches = DcmQRSCP.this
+			//                .calculateMatches(keys);
+			if (matches.isEmpty())
+				return null;
 
-            CStoreSCU<T> storescu = new CStoreSCUImpl<T>(withoutBulkData);
+			CStoreSCU<T> storescu = new CStoreSCUImpl<T>(withoutBulkData);
 
-            BasicRetrieveTask<T> retrieveTask = new BasicRetrieveTask<T>(
-                    Dimse.C_GET_RQ, as, pc, rq, matches, as, storescu);
-            retrieveTask.setSendPendingRSP(isSendPendingCGet());
-            return retrieveTask;
-        }
+			BasicRetrieveTask<T> retrieveTask = new BasicRetrieveTask<T>(
+					Dimse.C_GET_RQ, as, pc, rq, matches, as, storescu);
+			retrieveTask.setSendPendingRSP(isSendPendingCGet());
+			return retrieveTask;
+		}
 
-        private boolean relational(Association as, Attributes rq) {
-            String cuid = rq.getString(Tag.AffectedSOPClassUID);
-            ExtendedNegotiation extNeg = as.getAAssociateAC()
-                    .getExtNegotiationFor(cuid);
-            return QueryOption.toOptions(extNeg).contains(
-                    QueryOption.RELATIONAL);
-        }
+		private boolean relational(Association as, Attributes rq) {
+			String cuid = rq.getString(Tag.AffectedSOPClassUID);
+			ExtendedNegotiation extNeg = as.getAAssociateAC()
+					.getExtNegotiationFor(cuid);
+			return QueryOption.toOptions(extNeg).contains(
+					QueryOption.RELATIONAL);
+		}
 
-    }
-    
-    private final class CMoveSCPImpl extends BasicCMoveSCP {
+	}
 
-        private final String[] qrLevels;
-        private final QueryRetrieveLevel rootLevel;
+	private final class CMoveSCPImpl extends BasicCMoveSCP {
 
-        public CMoveSCPImpl(String sopClass, String... qrLevels) {
-            super(sopClass);
-            this.qrLevels = qrLevels;
-            this.rootLevel = QueryRetrieveLevel.valueOf(qrLevels[0]);
-        }
+		private final String[] qrLevels;
+		private final QueryRetrieveLevel rootLevel;
 
-        @Override
-        protected RetrieveTask calculateMatches(Association as,
-                PresentationContext pc, final Attributes rq, Attributes keys)
-                throws DicomServiceException {
-            QueryRetrieveLevel level = QueryRetrieveLevel.valueOf(keys,
-                    qrLevels);
-            level.validateRetrieveKeys(keys, rootLevel, relational(as, rq));
-            String moveDest = rq.getString(Tag.MoveDestination);
-            final Connection remote = getRemoteConnection(moveDest);
-            if (remote == null)
-                throw new DicomServiceException(Status.MoveDestinationUnknown,
-                        "Move Destination: " + moveDest + " unknown");
-            List<T> matches = DcmQRSCP.this.calculateMatches(keys);
-            if (matches.isEmpty())
-                return null;
+		public CMoveSCPImpl(String sopClass, String... qrLevels) {
+			super(sopClass);
+			this.qrLevels = qrLevels;
+			this.rootLevel = QueryRetrieveLevel.valueOf(qrLevels[0]);
+		}
 
-            AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), moveDest,
-                    matches);
-            Association storeas = openStoreAssociation(as, remote, aarq);
+		@Override
+		protected RetrieveTask calculateMatches(Association as,
+				PresentationContext pc, final Attributes rq, Attributes keys)
+						throws DicomServiceException {
+			QueryRetrieveLevel level = QueryRetrieveLevel.valueOf(keys,
+					qrLevels);
+			level.validateRetrieveKeys(keys, rootLevel, relational(as, rq));
+			String moveDest = rq.getString(Tag.MoveDestination);
+			final Connection remote = getRemoteConnection(moveDest);
+			if (remote == null)
+				throw new DicomServiceException(Status.MoveDestinationUnknown,
+						"Move Destination: " + moveDest + " unknown");
+			List<T> matches = DcmQRSCP.this.calculateMatches(keys);
+			if (matches.isEmpty())
+				return null;
 
-            BasicRetrieveTask<T> retrieveTask = new BasicRetrieveTask<T>(
-                    Dimse.C_MOVE_RQ, as, pc, rq, matches, storeas,
-                    new BasicCStoreSCU<T>());
-            retrieveTask
-                    .setSendPendingRSPInterval(getSendPendingCMoveInterval());
-            return retrieveTask;
-        }
+			AAssociateRQ aarq = makeAAssociateRQ(as.getLocalAET(), moveDest,
+					matches);
+			Association storeas = openStoreAssociation(as, remote, aarq);
 
-        private Association openStoreAssociation(Association as,
-                Connection remote, AAssociateRQ aarq)
-                throws DicomServiceException {
-            try {
-                return as.getApplicationEntity().connect(as.getConnection(),
-                        remote, aarq);
-            } catch (Exception e) {
-                throw new DicomServiceException(
-                        Status.UnableToPerformSubOperations, e);
-            }
-        }
+			BasicRetrieveTask<T> retrieveTask = new BasicRetrieveTask<T>(
+					Dimse.C_MOVE_RQ, as, pc, rq, matches, storeas,
+					new BasicCStoreSCU<T>());
+			retrieveTask
+			.setSendPendingRSPInterval(getSendPendingCMoveInterval());
+			return retrieveTask;
+		}
 
-        private AAssociateRQ makeAAssociateRQ(String callingAET,
-                String calledAET, List<T> matches) {
-            AAssociateRQ aarq = new AAssociateRQ();
-            aarq.setCalledAET(calledAET);
-            aarq.setCallingAET(callingAET);
-            for (InstanceLocator match : matches) {
-                if (aarq.addPresentationContextFor(match.cuid, match.tsuid)) {
-                    if (!UID.ExplicitVRLittleEndian.equals(match.tsuid))
-                        aarq.addPresentationContextFor(match.cuid,
-                                UID.ExplicitVRLittleEndian);
-                    if (!UID.ImplicitVRLittleEndian.equals(match.tsuid))
-                        aarq.addPresentationContextFor(match.cuid,
-                                UID.ImplicitVRLittleEndian);
-                }
-            }
-            return aarq;
-        }
+		private Association openStoreAssociation(Association as,
+				Connection remote, AAssociateRQ aarq)
+						throws DicomServiceException {
+			try {
+				return as.getApplicationEntity().connect(as.getConnection(),
+						remote, aarq);
+			} catch (Exception e) {
+				throw new DicomServiceException(
+						Status.UnableToPerformSubOperations, e);
+			}
+		}
 
-        private boolean relational(Association as, Attributes rq) {
-            String cuid = rq.getString(Tag.AffectedSOPClassUID);
-            ExtendedNegotiation extNeg = as.getAAssociateAC()
-                    .getExtNegotiationFor(cuid);
-            return QueryOption.toOptions(extNeg).contains(
-                    QueryOption.RELATIONAL);
-        }
-    }
+		private AAssociateRQ makeAAssociateRQ(String callingAET,
+				String calledAET, List<T> matches) {
+			AAssociateRQ aarq = new AAssociateRQ();
+			aarq.setCalledAET(calledAET);
+			aarq.setCallingAET(callingAET);
+			for (InstanceLocator match : matches) {
+				if (aarq.addPresentationContextFor(match.cuid, match.tsuid)) {
+					if (!UID.ExplicitVRLittleEndian.equals(match.tsuid))
+						aarq.addPresentationContextFor(match.cuid,
+								UID.ExplicitVRLittleEndian);
+					if (!UID.ImplicitVRLittleEndian.equals(match.tsuid))
+						aarq.addPresentationContextFor(match.cuid,
+								UID.ImplicitVRLittleEndian);
+				}
+			}
+			return aarq;
+		}
 
-    public DcmQRSCP() throws IOException {
-        device.addConnection(conn);
-        device.addApplicationEntity(ae);
-        ae.setAssociationAcceptor(true);
-        ae.addConnection(conn);
-    }
-    
-    public void init() {
-        device.setDimseRQHandler(createServiceRegistry());
-    }
-    
-    protected void addCStoreSCPService(DicomServiceRegistry serviceRegistry ) {
-        serviceRegistry.addDicomService(new CStoreSCPImpl(ddWriter, filePathFormat, recFact));
-    }
-    
-    protected void addStgCmtSCPService(DicomServiceRegistry serviceRegistry ) {
-        serviceRegistry.addDicomService(new StgCmtSCPImpl(ddReader, remoteConnections,  stgCmtOnSameAssoc, device.getExecutor()));
-    }
+		private boolean relational(Association as, Attributes rq) {
+			String cuid = rq.getString(Tag.AffectedSOPClassUID);
+			ExtendedNegotiation extNeg = as.getAAssociateAC()
+					.getExtNegotiationFor(cuid);
+			return QueryOption.toOptions(extNeg).contains(
+					QueryOption.RELATIONAL);
+		}
+	}
 
-    private DicomServiceRegistry createServiceRegistry() {
-        DicomServiceRegistry serviceRegistry = new DicomServiceRegistry();
-        serviceRegistry.addDicomService(new BasicCEchoSCP());
-        
-        addCStoreSCPService(serviceRegistry);
-        addStgCmtSCPService(serviceRegistry);
-        
-        serviceRegistry.addDicomService(new CFindSCPImpl(
-                UID.PatientRootQueryRetrieveInformationModelFIND,
-                PATIENT_ROOT_LEVELS));
-        serviceRegistry.addDicomService(new CFindSCPImpl(
-                UID.StudyRootQueryRetrieveInformationModelFIND,
-                STUDY_ROOT_LEVELS));
-        serviceRegistry.addDicomService(new CFindSCPImpl(
-                UID.PatientStudyOnlyQueryRetrieveInformationModelFINDRetired,
-                PATIENT_STUDY_ONLY_LEVELS));
-        serviceRegistry.addDicomService(new CGetSCPImpl(
-                UID.PatientRootQueryRetrieveInformationModelGET,
-                PATIENT_ROOT_LEVELS));
-        serviceRegistry.addDicomService(new CGetSCPImpl(
-                UID.StudyRootQueryRetrieveInformationModelGET,
-                STUDY_ROOT_LEVELS));
-        serviceRegistry.addDicomService(new CGetSCPImpl(
-                UID.PatientStudyOnlyQueryRetrieveInformationModelGETRetired,
-                PATIENT_STUDY_ONLY_LEVELS));
-        serviceRegistry.addDicomService(new CGetSCPImpl(
-                UID.CompositeInstanceRetrieveWithoutBulkDataGET));
-        serviceRegistry.addDicomService(new CMoveSCPImpl(
-                UID.PatientRootQueryRetrieveInformationModelMOVE,
-                PATIENT_ROOT_LEVELS));
-        serviceRegistry.addDicomService(new CMoveSCPImpl(
-                UID.StudyRootQueryRetrieveInformationModelMOVE,
-                STUDY_ROOT_LEVELS));
-        serviceRegistry.addDicomService(new CMoveSCPImpl(
-                UID.PatientStudyOnlyQueryRetrieveInformationModelMOVERetired,
-                PATIENT_STUDY_ONLY_LEVELS));
-        return serviceRegistry;
-    }
+	public DcmQRSCP() throws IOException {
+		device.addConnection(conn);
+		device.addApplicationEntity(ae);
+		ae.setAssociationAcceptor(true);
+		ae.addConnection(conn);
+	}
 
-    public final Device getDevice() {
-        return device;
-    }
-    
-    public void setDevice(Device device) {
-        this.device = device;
-    }
-    
-    public void setApplicationEntity(ApplicationEntity ae) {
-        this.ae = ae;
-    }
+	public void init() {
+		device.setDimseRQHandler(createServiceRegistry());
+	}
 
-    public final void setDicomDirectory(File dicomDir) {
-        File storageDir = dicomDir.getParentFile();
-        if (storageDir.mkdirs())
-            System.out.println("M-WRITE " + storageDir);
-        this.storageDir = storageDir;
-        this.dicomDir = dicomDir;
-    }
+	protected void addCStoreSCPService(DicomServiceRegistry serviceRegistry ) {
+		serviceRegistry.addDicomService(new CStoreSCPImpl(ddWriter, filePathFormat, recFact));
+	}
 
-    public final File getStorageDirectory() {
-        return storageDir;
-    }
+	protected void addStgCmtSCPService(DicomServiceRegistry serviceRegistry ) {
+		serviceRegistry.addDicomService(new StgCmtSCPImpl(ddReader, remoteConnections,  stgCmtOnSameAssoc, device.getExecutor()));
+	}
 
-    public final AttributesFormat getFilePathFormat() {
-        return filePathFormat;
-    }
+	private DicomServiceRegistry createServiceRegistry() {
+		DicomServiceRegistry serviceRegistry = new DicomServiceRegistry();
+		serviceRegistry.addDicomService(new BasicCEchoSCP());
 
-    public void setFilePathFormat(String pattern) {
-        this.filePathFormat = new AttributesFormat(pattern);
-    }
+		addCStoreSCPService(serviceRegistry);
+		addStgCmtSCPService(serviceRegistry);
 
-    public final File getDicomDirectory() {
-        return dicomDir;
-    }
+		serviceRegistry.addDicomService(new CFindSCPImpl(
+				UID.PatientRootQueryRetrieveInformationModelFIND,
+				PATIENT_ROOT_LEVELS));
+		serviceRegistry.addDicomService(new CFindSCPImpl(
+				UID.StudyRootQueryRetrieveInformationModelFIND,
+				STUDY_ROOT_LEVELS));
+		serviceRegistry.addDicomService(new CFindSCPImpl(
+				UID.PatientStudyOnlyQueryRetrieveInformationModelFINDRetired,
+				PATIENT_STUDY_ONLY_LEVELS));
+		serviceRegistry.addDicomService(new CGetSCPImpl(
+				UID.PatientRootQueryRetrieveInformationModelGET,
+				PATIENT_ROOT_LEVELS));
+		serviceRegistry.addDicomService(new CGetSCPImpl(
+				UID.StudyRootQueryRetrieveInformationModelGET,
+				STUDY_ROOT_LEVELS));
+		serviceRegistry.addDicomService(new CGetSCPImpl(
+				UID.PatientStudyOnlyQueryRetrieveInformationModelGETRetired,
+				PATIENT_STUDY_ONLY_LEVELS));
+		serviceRegistry.addDicomService(new CGetSCPImpl(
+				UID.CompositeInstanceRetrieveWithoutBulkDataGET));
+		serviceRegistry.addDicomService(new CMoveSCPImpl(
+				UID.PatientRootQueryRetrieveInformationModelMOVE,
+				PATIENT_ROOT_LEVELS));
+		serviceRegistry.addDicomService(new CMoveSCPImpl(
+				UID.StudyRootQueryRetrieveInformationModelMOVE,
+				STUDY_ROOT_LEVELS));
+		serviceRegistry.addDicomService(new CMoveSCPImpl(
+				UID.PatientStudyOnlyQueryRetrieveInformationModelMOVERetired,
+				PATIENT_STUDY_ONLY_LEVELS));
+		return serviceRegistry;
+	}
 
-    public boolean isWriteable() {
-        return storageDir.canWrite();
-    }
+	public final Device getDevice() {
+		return device;
+	}
 
-    public final void setInstanceAvailability(String availability) {
-        this.availability = availability;
-    }
+	public void setDevice(Device device) {
+		this.device = device;
+	}
 
-    public final String getInstanceAvailability() {
-        return availability;
-    }
+	public void setApplicationEntity(ApplicationEntity ae) {
+		this.ae = ae;
+	}
 
-    public boolean isStgCmtOnSameAssoc() {
-        return stgCmtOnSameAssoc;
-    }
+	public final void setDicomDirectory(File dicomDir) {
+		File storageDir = dicomDir.getParentFile();
+		if (storageDir.mkdirs())
+			System.out.println("M-WRITE " + storageDir);
+		this.storageDir = storageDir;
+		this.dicomDir = dicomDir;
+	}
 
-    public void setStgCmtOnSameAssoc(boolean stgCmtOnSameAssoc) {
-        this.stgCmtOnSameAssoc = stgCmtOnSameAssoc;
-    }
+	public final File getStorageDirectory() {
+		return storageDir;
+	}
 
-    public final void setSendPendingCGet(boolean sendPendingCGet) {
-        this.sendPendingCGet = sendPendingCGet;
-    }
+	public final AttributesFormat getFilePathFormat() {
+		return filePathFormat;
+	}
 
-    public final boolean isSendPendingCGet() {
-        return sendPendingCGet;
-    }
+	public void setFilePathFormat(String pattern) {
+		this.filePathFormat = new AttributesFormat(pattern);
+	}
 
-    public final void setSendPendingCMoveInterval(int sendPendingCMoveInterval) {
-        this.sendPendingCMoveInterval = sendPendingCMoveInterval;
-    }
+	public final File getDicomDirectory() {
+		return dicomDir;
+	}
 
-    public final int getSendPendingCMoveInterval() {
-        return sendPendingCMoveInterval;
-    }
+	public boolean isWriteable() {
+		return storageDir.canWrite();
+	}
 
-    public final void setRecordFactory(RecordFactory recFact) {
-        this.recFact = recFact;
-    }
+	public final void setInstanceAvailability(String availability) {
+		this.availability = availability;
+	}
 
-    public final RecordFactory getRecordFactory() {
-        return recFact;
-    }
+	public final String getInstanceAvailability() {
+		return availability;
+	}
 
-    private static CommandLine parseComandLine(String[] args)
-            throws ParseException {
-        Options opts = new Options();
-        CLIUtils.addFilesetInfoOptions(opts);
-        CLIUtils.addBindServerOption(opts);
-        CLIUtils.addConnectTimeoutOption(opts);
-        CLIUtils.addAcceptTimeoutOption(opts);
-        CLIUtils.addAEOptions(opts);
-        CLIUtils.addCommonOptions(opts);
-        CLIUtils.addResponseTimeoutOption(opts);
-        addDicomDirOption(opts);
-        addTransferCapabilityOptions(opts);
-        addInstanceAvailabilityOption(opts);
-        addStgCmtOptions(opts);
-        addSendingPendingOptions(opts);
-        addRemoteConnectionsOption(opts);
-        addHBaseConfig(opts);
-        addStorageDir(opts);
-        return CLIUtils.parseComandLine(args, opts, rb, DcmQRSCP.class);
-    }
-    
-    @SuppressWarnings("static-access")
-    private static void addHBaseConfig(Options opts) {
-    	opts.addOption(OptionBuilder.isRequired(false)
-    			.hasArgs()
-    			.withArgName("hbase")
-    			.withDescription("hbase configuration file")
-    			.withLongOpt("hbase")
-    			.create("f"));
-    }
-    
-    @SuppressWarnings("static-access")
-    private static void addStorageDir(Options opts) {
-    	opts.addOption(OptionBuilder.isRequired(false)
-    			.hasArgs()
-    			.withArgName("imagesFolder")
-    			.withDescription("Directory where images are stored")
-    			.withLongOpt("imagesFolder")
-    			.create("d"));
-    }
+	public boolean isStgCmtOnSameAssoc() {
+		return stgCmtOnSameAssoc;
+	}
 
-    @SuppressWarnings("static-access")
-    private static void addInstanceAvailabilityOption(Options opts) {
-        opts.addOption(OptionBuilder.hasArg().withArgName("code")
-                .withDescription(rb.getString("availability"))
-                .withLongOpt("availability").create());
-    }
+	public void setStgCmtOnSameAssoc(boolean stgCmtOnSameAssoc) {
+		this.stgCmtOnSameAssoc = stgCmtOnSameAssoc;
+	}
 
-    private static void addStgCmtOptions(Options opts) {
-        opts.addOption(null, "stgcmt-same-assoc", false,
-                rb.getString("stgcmt-same-assoc"));
-    }
+	public final void setSendPendingCGet(boolean sendPendingCGet) {
+		this.sendPendingCGet = sendPendingCGet;
+	}
 
-    @SuppressWarnings("static-access")
-    private static void addSendingPendingOptions(Options opts) {
-        opts.addOption(null, "pending-cget", false,
-                rb.getString("pending-cget"));
-        opts.addOption(OptionBuilder.hasArg().withArgName("s")
-                .withDescription(rb.getString("pending-cmove"))
-                .withLongOpt("pending-cmove").create());
-    }
+	public final boolean isSendPendingCGet() {
+		return sendPendingCGet;
+	}
 
-    @SuppressWarnings("static-access")
-    private static void addDicomDirOption(Options opts) {
-        opts.addOption(OptionBuilder.hasArg().withArgName("file")
-                .withDescription(rb.getString("dicomdir"))
-                .withLongOpt("dicomdir").create(null)); // added null to make this optional 
-        opts.addOption(OptionBuilder.hasArg().withArgName("pattern")
-                .withDescription(rb.getString("filepath"))
-                .withLongOpt("filepath").create(null));
-    }
+	public final void setSendPendingCMoveInterval(int sendPendingCMoveInterval) {
+		this.sendPendingCMoveInterval = sendPendingCMoveInterval;
+	}
 
-    @SuppressWarnings("static-access")
-    private static void addTransferCapabilityOptions(Options opts) {
-        opts.addOption(null, "all-storage", false, rb.getString("all-storage"));
-        opts.addOption(null, "no-storage", false, rb.getString("no-storage"));
-        opts.addOption(null, "no-query", false, rb.getString("no-query"));
-        opts.addOption(null, "no-retrieve", false, rb.getString("no-retrieve"));
-        opts.addOption(null, "relational", false, rb.getString("relational"));
-        opts.addOption(OptionBuilder.hasArg().withArgName("file|url")
-                .withDescription(rb.getString("storage-sop-classes"))
-                .withLongOpt("storage-sop-classes").create());
-        opts.addOption(OptionBuilder.hasArg().withArgName("file|url")
-                .withDescription(rb.getString("query-sop-classes"))
-                .withLongOpt("query-sop-classes").create());
-        opts.addOption(OptionBuilder.hasArg().withArgName("file|url")
-                .withDescription(rb.getString("retrieve-sop-classes"))
-                .withLongOpt("retrieve-sop-classes").create());
-    }
+	public final int getSendPendingCMoveInterval() {
+		return sendPendingCMoveInterval;
+	}
 
-    @SuppressWarnings("static-access")
-    private static void addRemoteConnectionsOption(Options opts) {
-        opts.addOption(OptionBuilder.hasArg().withArgName("file|url")
-                .withDescription(rb.getString("ae-config"))
-                .withLongOpt("ae-config").create());
-    }
+	public final void setRecordFactory(RecordFactory recFact) {
+		this.recFact = recFact;
+	}
+
+	public final RecordFactory getRecordFactory() {
+		return recFact;
+	}
+
+	private static CommandLine parseComandLine(String[] args)
+			throws ParseException {
+		Options opts = new Options();
+		CLIUtils.addFilesetInfoOptions(opts);
+		CLIUtils.addBindServerOption(opts);
+		CLIUtils.addConnectTimeoutOption(opts);
+		CLIUtils.addAcceptTimeoutOption(opts);
+		CLIUtils.addAEOptions(opts);
+		CLIUtils.addCommonOptions(opts);
+		CLIUtils.addResponseTimeoutOption(opts);
+		addDicomDirOption(opts);
+		addTransferCapabilityOptions(opts);
+		addInstanceAvailabilityOption(opts);
+		addStgCmtOptions(opts);
+		addSendingPendingOptions(opts);
+		addRemoteConnectionsOption(opts);
+		addHBaseConfig(opts);
+		addStorageDir(opts);
+		return CLIUtils.parseComandLine(args, opts, rb, DcmQRSCP.class);
+	}
+
+	@SuppressWarnings("static-access")
+	private static void addHBaseConfig(Options opts) {
+		opts.addOption(OptionBuilder.isRequired(false)
+				.hasArgs()
+				.withArgName("hbase")
+				.withDescription("hbase configuration file")
+				.withLongOpt("hbase")
+				.create("f"));
+	}
+
+	@SuppressWarnings("static-access")
+	private static void addStorageDir(Options opts) {
+		opts.addOption(OptionBuilder.isRequired(false)
+				.hasArgs()
+				.withArgName("imagesFolder")
+				.withDescription("Directory where images are stored")
+				.withLongOpt("imagesFolder")
+				.create("d"));
+	}
+
+	@SuppressWarnings("static-access")
+	private static void addInstanceAvailabilityOption(Options opts) {
+		opts.addOption(OptionBuilder.hasArg().withArgName("code")
+				.withDescription(rb.getString("availability"))
+				.withLongOpt("availability").create());
+	}
+
+	private static void addStgCmtOptions(Options opts) {
+		opts.addOption(null, "stgcmt-same-assoc", false,
+				rb.getString("stgcmt-same-assoc"));
+	}
+
+	@SuppressWarnings("static-access")
+	private static void addSendingPendingOptions(Options opts) {
+		opts.addOption(null, "pending-cget", false,
+				rb.getString("pending-cget"));
+		opts.addOption(OptionBuilder.hasArg().withArgName("s")
+				.withDescription(rb.getString("pending-cmove"))
+				.withLongOpt("pending-cmove").create());
+	}
+
+	@SuppressWarnings("static-access")
+	private static void addDicomDirOption(Options opts) {
+		opts.addOption(OptionBuilder.hasArg().withArgName("file")
+				.withDescription(rb.getString("dicomdir"))
+				.withLongOpt("dicomdir").create(null)); // added null to make this optional 
+		opts.addOption(OptionBuilder.hasArg().withArgName("pattern")
+				.withDescription(rb.getString("filepath"))
+				.withLongOpt("filepath").create(null));
+	}
+
+	@SuppressWarnings("static-access")
+	private static void addTransferCapabilityOptions(Options opts) {
+		opts.addOption(null, "all-storage", false, rb.getString("all-storage"));
+		opts.addOption(null, "no-storage", false, rb.getString("no-storage"));
+		opts.addOption(null, "no-query", false, rb.getString("no-query"));
+		opts.addOption(null, "no-retrieve", false, rb.getString("no-retrieve"));
+		opts.addOption(null, "relational", false, rb.getString("relational"));
+		opts.addOption(OptionBuilder.hasArg().withArgName("file|url")
+				.withDescription(rb.getString("storage-sop-classes"))
+				.withLongOpt("storage-sop-classes").create());
+		opts.addOption(OptionBuilder.hasArg().withArgName("file|url")
+				.withDescription(rb.getString("query-sop-classes"))
+				.withLongOpt("query-sop-classes").create());
+		opts.addOption(OptionBuilder.hasArg().withArgName("file|url")
+				.withDescription(rb.getString("retrieve-sop-classes"))
+				.withLongOpt("retrieve-sop-classes").create());
+	}
+
+	@SuppressWarnings("static-access")
+	private static void addRemoteConnectionsOption(Options opts) {
+		opts.addOption(OptionBuilder.hasArg().withArgName("file|url")
+				.withDescription(rb.getString("ae-config"))
+				.withLongOpt("ae-config").create());
+	}
 
 
-    public static void main(String[] args) {
-        try {
-        	//String [] myargs = {"-b","DCMQRSCP:11113","--dicomdir","/Users/dianamartins/testat-getscu/DICOMDIR","--storage-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--retrieve-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--query-sop-classes","/Users/dianamartins/query-sop-classes.properties","--ae-config","/Users/dianamartins/ae.properties"}; 
-            //String [] myargs = {"-b","DCMQRSCP:11116","-f","def-hbase-client.xml", "--storage-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--retrieve-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--query-sop-classes","/Users/dianamartins/query-sop-classes.properties","--ae-config","/Users/dianamartins/ae.properties","--dicomdir","/Users/dianamartins/apoio/apoio2/DICOMDIR","-d","/Users/dianamartins/recebidasHBaseSCP"};
-        	CommandLine cl = parseComandLine(args);
-        	DcmQRSCP<InstanceLocator> main = new DcmQRSCP<InstanceLocator>();
-            if (cl.hasOption("hbase")) {
-            	System.out.println("************* Option -f recognized, usingHBase=true ***********");
-            	usingHBase = true;
-            	confHBase = new Configuration();
-            	confHBase.set("hbase.zookeeper.quorum","cloud80");
-        		confHBase.set("hbase.rootdir","hdfs://cloud80:8020/hbase");
-        		confHBase.set("hbase.cluster.distributed","true");
-        		confHBase.set("hbase.zookeeper.property.dataDir","/usr/local/hbase-0.98.20-hadoop2/zookeeper-dir");
-        		confHBase.set("hbase.master.hostname","cloud80");
-        		confHBase.set("hbase.zookeeper.property.clientPort","2181");
-            	//confHBase.addResource(cl.getOptionValue("hbase"));
-            	imagesFolder = cl.getOptionValue("imagesFolder");
-            }else{
-            	usingHBase = false;
-            }
-            if (usingHBase == false){
-            	CLIUtils.configure(main.fsInfo, cl);
-            }
-            CLIUtils.configureBindServer(main.conn, main.ae, cl);
-            CLIUtils.configure(main.conn, cl);
-            configureDicomFileSet(main, cl);
-            configureTransferCapability(main, cl);
-            configureInstanceAvailability(main, cl);
-            configureStgCmt(main, cl);
-            configureSendPending(main, cl);
-            configureRemoteConnections(main, cl);
-            main.init();
-            ExecutorService executorService = Executors.newCachedThreadPool();
-            ScheduledExecutorService scheduledExecutorService = Executors
-                    .newSingleThreadScheduledExecutor();
-            main.device.setScheduledExecutor(scheduledExecutorService);
-            main.device.setExecutor(executorService);
-            main.device.bindConnections();
-        } catch (ParseException e) {
-            System.err.println("dcmqrscp: " + e.getMessage());
-            System.err.println(rb.getString("try"));
-            System.exit(2);
-        } catch (Exception e) {
-            System.err.println("dcmqrscp: " + e.getMessage());
-            e.printStackTrace();
-            System.exit(2);
-        }
-    }
+	public static void main(String[] args) {
+		try {
+			//String [] myargs = {"-b","DCMQRSCP:11113","--dicomdir","/Users/dianamartins/testat-getscu/DICOMDIR","--storage-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--retrieve-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--query-sop-classes","/Users/dianamartins/query-sop-classes.properties","--ae-config","/Users/dianamartins/ae.properties"}; 
+			//String [] myargs = {"-b","DCMQRSCP:11116","-f","def-hbase-client.xml", "--storage-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--retrieve-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--query-sop-classes","/Users/dianamartins/query-sop-classes.properties","--ae-config","/Users/dianamartins/ae.properties","--dicomdir","/Users/dianamartins/apoio/apoio2/DICOMDIR","-d","/Users/dianamartins/recebidasHBaseSCP"};
+			CommandLine cl = parseComandLine(args);
+			DcmQRSCP<InstanceLocator> main = new DcmQRSCP<InstanceLocator>();
+			if (cl.hasOption("hbase")) {
+				System.out.println("************* Option -f recognized, usingHBase=true ***********");
+				usingHBase = true;
+				confHBase = new Configuration();
+				confHBase.set("hbase.zookeeper.quorum","cloud80");
+				confHBase.set("hbase.rootdir","hdfs://cloud80:8020/hbase");
+				confHBase.set("hbase.cluster.distributed","true");
+				confHBase.set("hbase.zookeeper.property.dataDir","/usr/local/hbase-0.98.20-hadoop2/zookeeper-dir");
+				confHBase.set("hbase.master.hostname","cloud80");
+				confHBase.set("hbase.zookeeper.property.clientPort","2181");
+				//confHBase.addResource(cl.getOptionValue("hbase"));
+				imagesFolder = cl.getOptionValue("imagesFolder");
+			}else{
+				usingHBase = false;
+			}
+			if (usingHBase == false){
+				CLIUtils.configure(main.fsInfo, cl);
+			}
+			CLIUtils.configureBindServer(main.conn, main.ae, cl);
+			CLIUtils.configure(main.conn, cl);
+			configureDicomFileSet(main, cl);
+			configureTransferCapability(main, cl);
+			configureInstanceAvailability(main, cl);
+			configureStgCmt(main, cl);
+			configureSendPending(main, cl);
+			configureRemoteConnections(main, cl);
+			main.init();
+			ExecutorService executorService = Executors.newCachedThreadPool();
+			ScheduledExecutorService scheduledExecutorService = Executors
+					.newSingleThreadScheduledExecutor();
+			main.device.setScheduledExecutor(scheduledExecutorService);
+			main.device.setExecutor(executorService);
+			main.device.bindConnections();
+		} catch (ParseException e) {
+			System.err.println("dcmqrscp: " + e.getMessage());
+			System.err.println(rb.getString("try"));
+			System.exit(2);
+		} catch (Exception e) {
+			System.err.println("dcmqrscp: " + e.getMessage());
+			e.printStackTrace();
+			System.exit(2);
+		}
+	}
 
-    private static void configureDicomFileSet(DcmQRSCP<InstanceLocator> main, CommandLine cl)
-            throws ParseException {
-        if (!cl.hasOption("dicomdir"))
-            throw new MissingOptionException(rb.getString("missing-dicomdir"));
-        main.setDicomDirectory(new File(cl.getOptionValue("dicomdir")));
-        main.setFilePathFormat(cl.getOptionValue("filepath",
-                "DICOM/{0020000D,hash}/{0020000E,hash}/{00080018,hash}"));
-        main.setRecordFactory(new RecordFactory());
-    }
+	private static void configureDicomFileSet(DcmQRSCP<InstanceLocator> main, CommandLine cl)
+			throws ParseException {
+		if (!cl.hasOption("dicomdir"))
+			throw new MissingOptionException(rb.getString("missing-dicomdir"));
+		main.setDicomDirectory(new File(cl.getOptionValue("dicomdir")));
+		main.setFilePathFormat(cl.getOptionValue("filepath",
+				"DICOM/{0020000D,hash}/{0020000E,hash}/{00080018,hash}"));
+		main.setRecordFactory(new RecordFactory());
+	}
 
-    private static void configureInstanceAvailability(DcmQRSCP<InstanceLocator> main,
-            CommandLine cl) {
-        main.setInstanceAvailability(cl.getOptionValue("availability"));
-    }
+	private static void configureInstanceAvailability(DcmQRSCP<InstanceLocator> main,
+			CommandLine cl) {
+		main.setInstanceAvailability(cl.getOptionValue("availability"));
+	}
 
-    private static void configureStgCmt(DcmQRSCP<InstanceLocator> main, CommandLine cl) {
-        main.setStgCmtOnSameAssoc(cl.hasOption("stgcmt-same-assoc"));
-    }
+	private static void configureStgCmt(DcmQRSCP<InstanceLocator> main, CommandLine cl) {
+		main.setStgCmtOnSameAssoc(cl.hasOption("stgcmt-same-assoc"));
+	}
 
-    private static void configureSendPending(DcmQRSCP<InstanceLocator> main, CommandLine cl) {
-        main.setSendPendingCGet(cl.hasOption("pending-cget"));
-        if (cl.hasOption("pending-cmove"))
-            main.setSendPendingCMoveInterval(Integer.parseInt(cl
-                    .getOptionValue("pending-cmove")));
-    }
+	private static void configureSendPending(DcmQRSCP<InstanceLocator> main, CommandLine cl) {
+		main.setSendPendingCGet(cl.hasOption("pending-cget"));
+		if (cl.hasOption("pending-cmove"))
+			main.setSendPendingCMoveInterval(Integer.parseInt(cl
+					.getOptionValue("pending-cmove")));
+	}
 
 	private static void configureTransferCapability(DcmQRSCP<InstanceLocator> main, CommandLine cl) throws IOException {
 		ApplicationEntity ae = main.ae;
 
 		EnumSet<QueryOption> queryOptions = cl.hasOption("relational") ? EnumSet.of(QueryOption.RELATIONAL)
 				: EnumSet.noneOf(QueryOption.class);
-			boolean storage = !cl.hasOption("no-storage") && main.isWriteable();
-			if (storage && cl.hasOption("all-storage")) {
-				TransferCapability tc = new TransferCapability(null, "*", TransferCapability.Role.SCP, "*");
-				tc.setQueryOptions(queryOptions);
-				ae.addTransferCapability(tc);
-			} else {
-				ae.addTransferCapability(new TransferCapability(null, UID.VerificationSOPClass,
-						TransferCapability.Role.SCP, UID.ImplicitVRLittleEndian));
-				Properties storageSOPClasses = CLIUtils.loadProperties(
-						cl.getOptionValue("storage-sop-classes", "resource:storage-sop-classes.properties"), null);
-				if (storage)
-					addTransferCapabilities(ae, storageSOPClasses, TransferCapability.Role.SCP, null);
-				if (!cl.hasOption("no-retrieve")) {
-					addTransferCapabilities(ae, storageSOPClasses, TransferCapability.Role.SCU, null);
-					Properties p = CLIUtils.loadProperties(
-							cl.getOptionValue("retrieve-sop-classes", "resource:retrieve-sop-classes.properties"),
-							null);
-					addTransferCapabilities(ae, p, TransferCapability.Role.SCP, queryOptions);
-				}
-				if (!cl.hasOption("no-query")) {
-					Properties p = CLIUtils.loadProperties(
-							cl.getOptionValue("query-sop-classes", "resource:query-sop-classes.properties"), null);
-					addTransferCapabilities(ae, p, TransferCapability.Role.SCP, queryOptions);
-				}
-			}
+		boolean storage = !cl.hasOption("no-storage") && main.isWriteable();
+		if (storage && cl.hasOption("all-storage")) {
+			TransferCapability tc = new TransferCapability(null, "*", TransferCapability.Role.SCP, "*");
+			tc.setQueryOptions(queryOptions);
+			ae.addTransferCapability(tc);
+		} else {
+			ae.addTransferCapability(new TransferCapability(null, UID.VerificationSOPClass,
+					TransferCapability.Role.SCP, UID.ImplicitVRLittleEndian));
+			Properties storageSOPClasses = CLIUtils.loadProperties(
+					cl.getOptionValue("storage-sop-classes", "resource:storage-sop-classes.properties"), null);
 			if (storage)
-				main.openDicomDir();
-			else
-				main.openDicomDirForReadOnly();
+				addTransferCapabilities(ae, storageSOPClasses, TransferCapability.Role.SCP, null);
+			if (!cl.hasOption("no-retrieve")) {
+				addTransferCapabilities(ae, storageSOPClasses, TransferCapability.Role.SCU, null);
+				Properties p = CLIUtils.loadProperties(
+						cl.getOptionValue("retrieve-sop-classes", "resource:retrieve-sop-classes.properties"),
+						null);
+				addTransferCapabilities(ae, p, TransferCapability.Role.SCP, queryOptions);
+			}
+			if (!cl.hasOption("no-query")) {
+				Properties p = CLIUtils.loadProperties(
+						cl.getOptionValue("query-sop-classes", "resource:query-sop-classes.properties"), null);
+				addTransferCapabilities(ae, p, TransferCapability.Role.SCP, queryOptions);
+			}
+		}
+		if (storage)
+			main.openDicomDir();
+		else
+			main.openDicomDirForReadOnly();
 	}
 
-    private static void addTransferCapabilities(ApplicationEntity ae,
-            Properties p, TransferCapability.Role role,
-            EnumSet<QueryOption> queryOptions) {
-        for (String cuid : p.stringPropertyNames()) {
-            String ts = p.getProperty(cuid);
-            TransferCapability tc = new TransferCapability(null,
-                    CLIUtils.toUID(cuid), role, CLIUtils.toUIDs(ts));
-            tc.setQueryOptions(queryOptions);
-            ae.addTransferCapability(tc);
-        }
-    }
+	private static void addTransferCapabilities(ApplicationEntity ae,
+			Properties p, TransferCapability.Role role,
+			EnumSet<QueryOption> queryOptions) {
+		for (String cuid : p.stringPropertyNames()) {
+			String ts = p.getProperty(cuid);
+			TransferCapability tc = new TransferCapability(null,
+					CLIUtils.toUID(cuid), role, CLIUtils.toUIDs(ts));
+			tc.setQueryOptions(queryOptions);
+			ae.addTransferCapability(tc);
+		}
+	}
 
-    private static void configureRemoteConnections(DcmQRSCP<InstanceLocator> main, CommandLine cl)
-            throws Exception {
-        String file = cl.getOptionValue("ae-config", "resource:ae.properties");
-        Properties aeConfig = CLIUtils.loadProperties(file, null);
-        for (Map.Entry<Object, Object> entry : aeConfig.entrySet()) {
-            String aet = (String) entry.getKey();
-            String value = (String) entry.getValue();
-            try {
-                String[] hostPortCiphers = StringUtils.split(value, ':');
-                String[] ciphers = new String[hostPortCiphers.length - 2];
-                System.arraycopy(hostPortCiphers, 2, ciphers, 0, ciphers.length);
-                Connection remote = new Connection();
-                remote.setHostname(hostPortCiphers[0]);
-                remote.setPort(Integer.parseInt(hostPortCiphers[1]));
-                remote.setTlsCipherSuites(ciphers);
-                main.addRemoteConnection(aet, remote);
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Invalid entry in " + file
-                        + ": " + aet + "=" + value);
-            }
-        }
-    }
+	private static void configureRemoteConnections(DcmQRSCP<InstanceLocator> main, CommandLine cl)
+			throws Exception {
+		String file = cl.getOptionValue("ae-config", "resource:ae.properties");
+		Properties aeConfig = CLIUtils.loadProperties(file, null);
+		for (Map.Entry<Object, Object> entry : aeConfig.entrySet()) {
+			String aet = (String) entry.getKey();
+			String value = (String) entry.getValue();
+			try {
+				String[] hostPortCiphers = StringUtils.split(value, ':');
+				String[] ciphers = new String[hostPortCiphers.length - 2];
+				System.arraycopy(hostPortCiphers, 2, ciphers, 0, ciphers.length);
+				Connection remote = new Connection();
+				remote.setHostname(hostPortCiphers[0]);
+				remote.setPort(Integer.parseInt(hostPortCiphers[1]));
+				remote.setTlsCipherSuites(ciphers);
+				main.addRemoteConnection(aet, remote);
+			} catch (Exception e) {
+				throw new IllegalArgumentException("Invalid entry in " + file
+						+ ": " + aet + "=" + value);
+			}
+		}
+	}
 
-    final DicomDirReader getDicomDirReader() {
-        return ddReader;
-    }
-    
-    public void setDicomDirReader(DicomDirReader ddReader) {
-        this.ddReader = ddReader;
-    }
+	final DicomDirReader getDicomDirReader() {
+		return ddReader;
+	}
 
-    final DicomDirWriter getDicomDirWriter() {
-        return ddWriter;
-    }
+	public void setDicomDirReader(DicomDirReader ddReader) {
+		this.ddReader = ddReader;
+	}
 
-    private void openDicomDir() throws IOException {
-        if (!dicomDir.exists())
-            DicomDirWriter.createEmptyDirectory(dicomDir,
-                    UIDUtils.createUIDIfNull(fsInfo.getFilesetUID()),
-                    fsInfo.getFilesetID(), fsInfo.getDescriptorFile(),
-                    fsInfo.getDescriptorFileCharset());
-        ddReader = ddWriter = DicomDirWriter.open(dicomDir);
-    }
+	final DicomDirWriter getDicomDirWriter() {
+		return ddWriter;
+	}
 
-    private void openDicomDirForReadOnly() throws IOException {
-        ddReader = new DicomDirReader(dicomDir);
-    }
+	private void openDicomDir() throws IOException {
+		if (!dicomDir.exists())
+			DicomDirWriter.createEmptyDirectory(dicomDir,
+					UIDUtils.createUIDIfNull(fsInfo.getFilesetUID()),
+					fsInfo.getFilesetID(), fsInfo.getDescriptorFile(),
+					fsInfo.getDescriptorFileCharset());
+		ddReader = ddWriter = DicomDirWriter.open(dicomDir);
+	}
 
-    public void addRemoteConnection(String aet, Connection remote) {
-        remoteConnections.put(aet, remote);
-    }
+	private void openDicomDirForReadOnly() throws IOException {
+		ddReader = new DicomDirReader(dicomDir);
+	}
 
-    Connection getRemoteConnection(String dest) {
-        return remoteConnections.get(dest);
-    }
+	public void addRemoteConnection(String aet, Connection remote) {
+		remoteConnections.put(aet, remote);
+	}
 
-    public List<T> calculateMatches(Attributes keys)
-    		throws DicomServiceException {
-    	try {
-    		List<T> list = new ArrayList<T>();
-    		String[] patIDs = keys.getStrings(Tag.PatientID);
-    		String[] studyIUIDs = keys.getStrings(Tag.StudyInstanceUID);
-    		String[] seriesIUIDs = keys.getStrings(Tag.SeriesInstanceUID);
-    		String[] sopIUIDs = keys.getStrings(Tag.SOPInstanceUID);
-    		DicomDirReader ddr = ddReader;
-    		Attributes patRec = ddr.findPatientRecord(patIDs);
-    		while (patRec != null) {
-    			Attributes studyRec = ddr.findStudyRecord(patRec, studyIUIDs);
-    			while (studyRec != null) {
-    				Attributes seriesRec = ddr.findSeriesRecord(studyRec,
-    						seriesIUIDs);
-    				while (seriesRec != null) {
-    					Attributes instRec = ddr.findLowerInstanceRecord(
-    							seriesRec, true, sopIUIDs);
-    					while (instRec != null) {
-    						String cuid = instRec
-    								.getString(Tag.ReferencedSOPClassUIDInFile);
-    						String iuid = instRec
-    								.getString(Tag.ReferencedSOPInstanceUIDInFile);
-    						String tsuid = instRec
-    								.getString(Tag.ReferencedTransferSyntaxUIDInFile);
-    						String[] fileIDs = instRec
-    								.getStrings(Tag.ReferencedFileID);
-    						String uri = ddr.toFile(fileIDs).toURI().toString();
-    						list.add((T)new InstanceLocator(cuid, iuid, tsuid, uri));
-    						if (sopIUIDs != null && sopIUIDs.length == 1)
-    							break;
+	Connection getRemoteConnection(String dest) {
+		return remoteConnections.get(dest);
+	}
 
-    						instRec = ddr.findNextInstanceRecord(instRec, true,
-    								sopIUIDs);
-    					}
-    					if (seriesIUIDs != null && seriesIUIDs.length == 1)
-    						break;
+	public List<T> calculateMatches(Attributes keys)
+			throws DicomServiceException {
+		try {
+			List<T> list = new ArrayList<T>();
+			String[] patIDs = keys.getStrings(Tag.PatientID);
+			String[] studyIUIDs = keys.getStrings(Tag.StudyInstanceUID);
+			String[] seriesIUIDs = keys.getStrings(Tag.SeriesInstanceUID);
+			String[] sopIUIDs = keys.getStrings(Tag.SOPInstanceUID);
+			DicomDirReader ddr = ddReader;
+			Attributes patRec = ddr.findPatientRecord(patIDs);
+			while (patRec != null) {
+				Attributes studyRec = ddr.findStudyRecord(patRec, studyIUIDs);
+				while (studyRec != null) {
+					Attributes seriesRec = ddr.findSeriesRecord(studyRec,
+							seriesIUIDs);
+					while (seriesRec != null) {
+						Attributes instRec = ddr.findLowerInstanceRecord(
+								seriesRec, true, sopIUIDs);
+						while (instRec != null) {
+							String cuid = instRec
+									.getString(Tag.ReferencedSOPClassUIDInFile);
+							String iuid = instRec
+									.getString(Tag.ReferencedSOPInstanceUIDInFile);
+							String tsuid = instRec
+									.getString(Tag.ReferencedTransferSyntaxUIDInFile);
+							String[] fileIDs = instRec
+									.getStrings(Tag.ReferencedFileID);
+							String uri = ddr.toFile(fileIDs).toURI().toString();
+							list.add((T)new InstanceLocator(cuid, iuid, tsuid, uri));
+							if (sopIUIDs != null && sopIUIDs.length == 1)
+								break;
 
-    					seriesRec = ddr.findNextSeriesRecord(seriesRec,
-    							seriesIUIDs);
-    				}
-    				if (studyIUIDs != null && studyIUIDs.length == 1)
-    					break;
+							instRec = ddr.findNextInstanceRecord(instRec, true,
+									sopIUIDs);
+						}
+						if (seriesIUIDs != null && seriesIUIDs.length == 1)
+							break;
 
-    				studyRec = ddr.findNextStudyRecord(studyRec, studyIUIDs);
-    			}
-    			if (patIDs != null && patIDs.length == 1)
-    				break;
+						seriesRec = ddr.findNextSeriesRecord(seriesRec,
+								seriesIUIDs);
+					}
+					if (studyIUIDs != null && studyIUIDs.length == 1)
+						break;
 
-    			patRec = ddr.findNextPatientRecord(patRec, patIDs);
-    		}
-    		return list;
-    	} catch (IOException e) {
-    		throw new DicomServiceException(
-    				Status.UnableToCalculateNumberOfMatches, e);
-    	}
-    }
-    
-    // Método alterado
-    public List<T> calculateHBaseMatches(Attributes keys)
-    		throws DicomServiceException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, FileNotFoundException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException { //throw InvalidNumberOfBits
-    	
-    	EncryptionService encService = new EncryptionService(new byte[16], new byte[16]);
+					studyRec = ddr.findNextStudyRecord(studyRec, studyIUIDs);
+				}
+				if (patIDs != null && patIDs.length == 1)
+					break;
 
-    	System.out.println("*************Calculating HBase matches*********");
-    	List<T> list = new ArrayList<T>();
- 
-    	if (keys.contains(Tag.StudyInstanceUID)){
-    		studyInstanceUID = keys.getString(Tag.StudyInstanceUID);
-    		System.out.println("*************Found StudyInstanceUID*************");
-    	}
-    	if (keys.contains(Tag.SeriesInstanceUID)){
-    		seriesInstanceUID = keys.getString(Tag.SeriesInstanceUID);
-    	}
-    	if (keys.contains(Tag.SOPInstanceUID)){
-		System.out.println("*******Found SOPInstanceUID!******");
-    		SOPInstanceUID = keys.getString(Tag.SOPInstanceUID);
-    	}
-    	if (keys.contains(Tag.PatientID)){
-    		patientID = keys.getString(Tag.PatientID);
-    	}
-    	if (keys.contains(Tag.PatientName)){
-    		patientName = keys.getString(Tag.PatientName);
-    	}
-    	if (keys.contains(Tag.PatientBirthDate)){
-    		patientBirthDate = keys.getDate(Tag.PatientBirthDate).getTime();
-    	}
-    	if (keys.contains(Tag.PatientSex)){
-    		patientGender = keys.getString(Tag.PatientSex);
-    	}
-    	if (keys.contains(Tag.PatientWeight)){
-    		patientWeight = keys.getString(Tag.PatientWeight);
-    		
-    	}
-    	if (keys.contains(Tag.AdditionalPatientHistory)){
-    		patientHistory = keys.getString(Tag.AdditionalPatientHistory);
-    	}
-    	if (keys.contains(Tag.ImageType)){
-    		imageType = keys.getString(Tag.ImageType);
-    	}
-    	if (keys.contains(Tag.ContentDate)){
-    		imageDate = keys.getDate(Tag.ContentDate).getTime();
-    	}
-    	if (keys.contains(Tag.ContentTime)){
-    		try {
-    			imageHour = parseTime(keys.getString(Tag.ContentTime));
-    		} catch (java.text.ParseException e) {
-    			// TODO Auto-generated catch block
-    			e.printStackTrace();
-    		}
-    	}
-    	if (keys.contains(Tag.StudyDate)){
-    		studyDate = keys.getDate(Tag.StudyDate).getTime();
-    	}
-    	if (keys.contains(Tag.StudyTime)){
-    		try {
-    			studyHour = parseTime(keys.getString(Tag.StudyTime));
-    		} catch (java.text.ParseException e) {
-    			// TODO Auto-generated catch block
-    			e.printStackTrace();
-    		}
-    	}
-    	if (keys.contains(Tag.StudyDescription)){
-    		studyDesc = keys.getString(Tag.StudyDescription);
-    	}
-    	if (keys.contains(Tag.Modality)){
-    		modality = keys.getString(Tag.Modality);
-    	}
-    	if (keys.contains(Tag.InstitutionName)){
-    		institution = keys.getString(Tag.InstitutionName);
-    	}
-    	if (keys.contains(Tag.ReferringPhysicianName)){
-    		referingPhysician = keys.getString(Tag.ReferringPhysicianName);
-    	}
-    	if (keys.contains(Tag.SeriesDate)){
-    		seriesDate = keys.getDate(Tag.SeriesDate).getTime();
-    	}
-    	if (keys.contains(Tag.SeriesTime)){
-    		try {
-    			seriesHour = parseTime(keys.getString(Tag.SeriesTime));
-    		} catch (java.text.ParseException e) {
-    			// TODO Auto-generated catch block
-    			e.printStackTrace();
-    		}
-    	}
-    	if (keys.contains(Tag.SeriesDescription)){
-    		seriesDesc = keys.getString(Tag.SeriesDescription);
-    	}
-    	if (keys.contains(Tag.TransferSyntaxUID)){
-    		transferSyntax = keys.getString(Tag.TransferSyntaxUID);
-    	}
-    	if (keys.contains(Tag.Manufacturer)){
-    		manufacturer = keys.getString(Tag.Manufacturer);
-    	}
+				patRec = ddr.findNextPatientRecord(patRec, patIDs);
+			}
+			return list;
+		} catch (IOException e) {
+			throw new DicomServiceException(
+					Status.UnableToCalculateNumberOfMatches, e);
+		}
+	}
 
-    	//HTableInterface tableInterface = new HTable (confHBase, "DicomTable");
-        HTableInterface tableInterface = new SymColTable(confHBase, "DicomTable");
-       //HTableInterface tableInterface =  new PrivateColumnsSharedTable(confHBase, "DicomTable");
-        System.out.println("*********"+SOPInstanceUID+"**********");
-        if (SOPInstanceUID != null){
-		System.out.println("*****Starting get operation******");
-    		Get get = new Get (SOPInstanceUID.getBytes());
-            LOG.debug("GETXY instance UID "+ SOPInstanceUID);
-            get.setAttribute("protected: "+"Patient" + ":BirthDate", "".getBytes());
-            get.setAttribute("protected: " + "Patient" + ":Name", "".getBytes());
+	// Método alterado
+	public List<T> calculateHBaseMatches(Attributes keys)
+			throws DicomServiceException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, FileNotFoundException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException { //throw InvalidNumberOfBits
 
-    		Result res = tableInterface.get(get);
-            LOG.debug("DATD The result of value is "+ res.getRow());
-    		String value = new String(res.getRow());
-    		if (value != null){
-    			DicomInputStream dis = new DicomInputStream (new File(imagesFolder + "/" + value));
-    			DatasetWithFMI dataWithFMI = dis.readDatasetWithFMI();
-    			String uri = dis.getURI();
-    			Attributes dataset = dataWithFMI.getDataset();
-    			String cuid = dataset.getString(Tag.SOPClassUID);
-    			String tsuid = dataset.getString(Tag.TransferSyntaxUID);
-        		InstanceLocator resInstance = new InstanceLocator(cuid, value, tsuid, uri);
-        		list.add((T) resInstance);
-    		}
-    	}else{
-    		Scan scan = new Scan();
-    		System.out.println("************patient weight: "+patientWeight+"*********");
-    		if (patientBirthDate != null){
-    			filter = new SingleColumnValueFilter("Patient".getBytes(), "BirthDate".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(patientBirthDate));
-    			scan.setAttribute("protected: "+"Patient" + ":BirthDate", "".getBytes());
-    		}
-    		else if (patientName != null){
-    			filter = new SingleColumnValueFilter("Patient".getBytes(), "Name".getBytes(), CompareFilter.CompareOp.EQUAL, patientName.getBytes());
-    			scan.setAttribute("protected: " + "Patient" + ":Name", "".getBytes());
-    		}
-    		else if (patientID != null){
-    			filter = new SingleColumnValueFilter("Patient".getBytes(), "ID".getBytes(), CompareFilter.CompareOp.EQUAL, patientID.getBytes());
-    		}
-    		else if (patientGender != null){
-    			filter = new SingleColumnValueFilter("Patient".getBytes(), "Gender".getBytes(), CompareFilter.CompareOp.EQUAL, patientGender.getBytes());
-    		}
-    		else if (patientWeight != null){
-    			filter = new SingleColumnValueFilter("Patient".getBytes(), "Weight".getBytes(), CompareFilter.CompareOp.EQUAL, patientWeight.getBytes());
-    			scan.setAttribute("protected:Patient:Weight", "".getBytes());	
-    			System.out.println("**********Found weight********");
-    		}
-    		else if (patientHistory != null){
-    			filter = new SingleColumnValueFilter("Patient".getBytes(), "MedicalHistory".getBytes(), CompareFilter.CompareOp.EQUAL, patientHistory.getBytes());
-    			scan.setAttribute("protected: "+"Patient" + ":MedicalHistory", "".getBytes());
-    		}
-    		else if (imageType != null){
-    			filter = new SingleColumnValueFilter("Image".getBytes(), "Type".getBytes(), CompareFilter.CompareOp.EQUAL, imageType.getBytes());
-    		}
-    		else if (imageDate != null){
-    			filter = new SingleColumnValueFilter("Image".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(imageDate));
-    		}
-    		else if (imageHour != null){
-    			filter = new SingleColumnValueFilter("Image".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(imageHour));
-    		}
-    		else if (transferSyntax != null){
-    			filter = new SingleColumnValueFilter("Image".getBytes(), "TransferSyntax".getBytes(), CompareFilter.CompareOp.EQUAL, transferSyntax.getBytes());
-    		}
-//    		else if (studyInstanceUID != null){
-//    			//System.out.println("**************Setting studyInstanceUID filter************");
-//    			filter = new SingleColumnValueFilter("Study".getBytes(),"InstanceUID".getBytes(), CompareFilter.CompareOp.EQUAL, studyInstanceUID.getBytes());
-//    		}
-    		else if (studyDate != null){
-    			filter = new SingleColumnValueFilter("Study".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(studyDate));
-    		}
-    		else if (studyHour != null){
-    			filter = new SingleColumnValueFilter("Study".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(studyHour));
-    		}
-    		else if (studyDesc != null){
-    			filter = new SingleColumnValueFilter("Study".getBytes(), "Description".getBytes(), CompareFilter.CompareOp.EQUAL, studyDesc.getBytes());
-    		}
-    		else if (seriesInstanceUID != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "InstanceUID".getBytes(), CompareFilter.CompareOp.EQUAL, seriesInstanceUID.getBytes());
-    		}
-    		else if (seriesDate != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(seriesDate));
-    		}
-    		else if (seriesHour != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(seriesHour));
-    		}
-    		else if (modality != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "Modality".getBytes(), CompareFilter.CompareOp.EQUAL, modality.getBytes());
-    		}
-    		else if (manufacturer != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "Manufacturer".getBytes(), CompareFilter.CompareOp.EQUAL, manufacturer.getBytes());
-    		}
-    		else if (institution != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "Institution".getBytes(), CompareFilter.CompareOp.EQUAL, institution.getBytes());
-    			scan.setAttribute("protected: " + "Series" + ":Institution", "".getBytes());
-    		}
-    		else if (referingPhysician != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "ReferingPhysician".getBytes(), CompareFilter.CompareOp.EQUAL, referingPhysician.getBytes());
-    			scan.setAttribute("protected: " + "Series" + ":ReferingPhysician", "".getBytes());
-    		}
-    		else if (seriesDesc != null){
-    			filter = new SingleColumnValueFilter("Series".getBytes(), "Description".getBytes(), CompareFilter.CompareOp.EQUAL, seriesDesc.getBytes());
-    		}
-    		System.out.println(scan.getAttribute("protected:Patient:Weight"));
-    		scan.setFilter(filter);
-    		ResultScanner scanner = tableInterface.getScanner(scan);
-    		for (Result res = scanner.next(); res != null; res = scanner.next()){
-    			String value = new String(res.getRow());
-    			DicomInputStream dis = new DicomInputStream (new File(imagesFolder + "/" + value));
-    			DatasetWithFMI dataWithFMI = dis.readDatasetWithFMI();
-    			String uri = dis.getURI();
-    			Attributes dataset = dataWithFMI.getDataset();
-    			String cuid = dataset.getString(Tag.SOPClassUID);
-    			String tsuid = dataset.getString(Tag.TransferSyntaxUID);
-        		InstanceLocator resInstance = new InstanceLocator(cuid, value, tsuid, uri);
-        		list.add((T) resInstance);
-    		}
-    	}
-        tableInterface.close();
-        System.out.println("*************Closing table interface**************");
-        int num_res= list.size();
-        System.out.println("***************Number of matches: " + num_res + "*************");
-    	return list;
-    }
-    
-    private long parseTime(String timeTag) throws java.text.ParseException{
+		EncryptionService encService = new EncryptionService(new byte[16], new byte[16]);
+
+		System.out.println("*************Calculating HBase matches*********");
+		List<T> list = new ArrayList<T>();
+
+		if (keys.contains(Tag.StudyInstanceUID)){
+			studyInstanceUID = keys.getString(Tag.StudyInstanceUID);
+			System.out.println("*************Found StudyInstanceUID*************");
+		}
+		if (keys.contains(Tag.SeriesInstanceUID)){
+			seriesInstanceUID = keys.getString(Tag.SeriesInstanceUID);
+		}
+		if (keys.contains(Tag.SOPInstanceUID)){
+			System.out.println("*******Found SOPInstanceUID!******");
+			SOPInstanceUID = keys.getString(Tag.SOPInstanceUID);
+		}
+		if (keys.contains(Tag.PatientID)){
+			patientID = keys.getString(Tag.PatientID);
+		}
+		if (keys.contains(Tag.PatientName)){
+			patientName = keys.getString(Tag.PatientName);
+		}
+		if (keys.contains(Tag.PatientBirthDate)){
+			patientBirthDate = keys.getDate(Tag.PatientBirthDate).getTime();
+		}
+		if (keys.contains(Tag.PatientSex)){
+			patientGender = keys.getString(Tag.PatientSex);
+		}
+		if (keys.contains(Tag.PatientWeight)){
+			patientWeight = keys.getString(Tag.PatientWeight);
+
+		}
+		if (keys.contains(Tag.AdditionalPatientHistory)){
+			patientHistory = keys.getString(Tag.AdditionalPatientHistory);
+		}
+		if (keys.contains(Tag.ImageType)){
+			imageType = keys.getString(Tag.ImageType);
+		}
+		if (keys.contains(Tag.ContentDate)){
+			imageDate = keys.getDate(Tag.ContentDate).getTime();
+		}
+		if (keys.contains(Tag.ContentTime)){
+			try {
+				imageHour = parseTime(keys.getString(Tag.ContentTime));
+			} catch (java.text.ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		if (keys.contains(Tag.StudyDate)){
+			studyDate = keys.getDate(Tag.StudyDate).getTime();
+		}
+		if (keys.contains(Tag.StudyTime)){
+			try {
+				studyHour = parseTime(keys.getString(Tag.StudyTime));
+			} catch (java.text.ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		if (keys.contains(Tag.StudyDescription)){
+			studyDesc = keys.getString(Tag.StudyDescription);
+		}
+		if (keys.contains(Tag.Modality)){
+			modality = keys.getString(Tag.Modality);
+		}
+		if (keys.contains(Tag.InstitutionName)){
+			institution = keys.getString(Tag.InstitutionName);
+		}
+		if (keys.contains(Tag.ReferringPhysicianName)){
+			referingPhysician = keys.getString(Tag.ReferringPhysicianName);
+		}
+		if (keys.contains(Tag.SeriesDate)){
+			seriesDate = keys.getDate(Tag.SeriesDate).getTime();
+		}
+		if (keys.contains(Tag.SeriesTime)){
+			try {
+				seriesHour = parseTime(keys.getString(Tag.SeriesTime));
+			} catch (java.text.ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		if (keys.contains(Tag.SeriesDescription)){
+			seriesDesc = keys.getString(Tag.SeriesDescription);
+		}
+		if (keys.contains(Tag.TransferSyntaxUID)){
+			transferSyntax = keys.getString(Tag.TransferSyntaxUID);
+		}
+		if (keys.contains(Tag.Manufacturer)){
+			manufacturer = keys.getString(Tag.Manufacturer);
+		}
+
+		//HTableInterface tableInterface = new HTable (confHBase, "DicomTable");
+		HTableInterface tableInterface = new SymColTable(confHBase, "DicomTable");
+		//HTableInterface tableInterface =  new PrivateColumnsSharedTable(confHBase, "DicomTable");
+		System.out.println("*********"+SOPInstanceUID+"**********");
+		if (SOPInstanceUID != null){
+			System.out.println("*****Starting get operation******");
+			Get get = new Get (SOPInstanceUID.getBytes());
+			LOG.debug("GETXY instance UID "+ SOPInstanceUID);
+			get.setAttribute("protected: "+"Patient" + ":BirthDate", "".getBytes());
+			get.setAttribute("protected: " + "Patient" + ":Name", "".getBytes());
+
+			long t3 = System.nanoTime();
+			Result res = tableInterface.get(get);
+			long t4 = System.nanoTime();
+			Long get_time = t4 - t3;
+			LOG.debug("DATD The result of value is "+ res.getRow());
+			String value = new String(res.getRow());
+			if (value != null){
+				long t5 = System.nanoTime();
+				DicomInputStream dis = new DicomInputStream (new File(imagesFolder + "/" + value));
+				DatasetWithFMI dataWithFMI = dis.readDatasetWithFMI();
+				String uri = dis.getURI();
+				Attributes dataset = dataWithFMI.getDataset();
+				String cuid = dataset.getString(Tag.SOPClassUID);
+				String tsuid = dataset.getString(Tag.TransferSyntaxUID);
+				long t6 = System.nanoTime();
+				Long read_time = t6 - t5;
+				long t7 = System.nanoTime();
+				InstanceLocator resInstance = new InstanceLocator(cuid, value, tsuid, uri);
+				long t8 = System.nanoTime();
+				Long instance_time = t8-t7;
+				list.add((T) resInstance);
+				File results_read = new File("/home/gsd/dcm4che/results/read.txt");
+				File results_instance = new File("/home/gsd/dcm4che/results/instance.txt");
+				if (!results_read.exists()){
+					try {
+						results_read.createNewFile();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				FileWriter fw = null;
+				try {
+					fw = new FileWriter(results_read.getAbsoluteFile());
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				BufferedWriter bw = new BufferedWriter(fw);
+
+				if (read_time != 0){
+					try{
+						bw.append(read_time.toString());
+						bw.newLine();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				bw.flush();
+				bw.close();
+				
+				if (!results_instance.exists()){
+					try {
+						results_instance.createNewFile();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				FileWriter fw_instance = null;
+				try {
+					fw_instance = new FileWriter(results_instance.getAbsoluteFile());
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				BufferedWriter bw_instance = new BufferedWriter(fw_instance);
+
+				if (instance_time != 0){
+					try{
+						bw_instance.append(instance_time.toString());
+						bw_instance.newLine();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				bw.flush();
+				bw.close();
+			}
+			File results_get = new File("/home/gsd/dcm4che/results/get.txt");
+			if (!results_get.exists()){
+				try {
+					results_get.createNewFile();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			FileWriter fw = null;
+			try {
+				fw = new FileWriter(results_get.getAbsoluteFile());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			BufferedWriter bw = new BufferedWriter(fw);
+
+			if (get_time != 0){
+				try{
+					bw.append(get_time.toString());
+					bw.newLine();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			bw.flush();
+			bw.close();
+		}else{
+			Scan scan = new Scan();
+			System.out.println("************patient weight: "+patientWeight+"*********");
+			if (patientBirthDate != null){
+				filter = new SingleColumnValueFilter("Patient".getBytes(), "BirthDate".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(patientBirthDate));
+				scan.setAttribute("protected: "+"Patient" + ":BirthDate", "".getBytes());
+			}
+			else if (patientName != null){
+				filter = new SingleColumnValueFilter("Patient".getBytes(), "Name".getBytes(), CompareFilter.CompareOp.EQUAL, patientName.getBytes());
+				scan.setAttribute("protected: " + "Patient" + ":Name", "".getBytes());
+			}
+			else if (patientID != null){
+				filter = new SingleColumnValueFilter("Patient".getBytes(), "ID".getBytes(), CompareFilter.CompareOp.EQUAL, patientID.getBytes());
+			}
+			else if (patientGender != null){
+				filter = new SingleColumnValueFilter("Patient".getBytes(), "Gender".getBytes(), CompareFilter.CompareOp.EQUAL, patientGender.getBytes());
+			}
+			else if (patientWeight != null){
+				filter = new SingleColumnValueFilter("Patient".getBytes(), "Weight".getBytes(), CompareFilter.CompareOp.EQUAL, patientWeight.getBytes());
+				scan.setAttribute("protected:Patient:Weight", "".getBytes());	
+				System.out.println("**********Found weight********");
+			}
+			else if (patientHistory != null){
+				filter = new SingleColumnValueFilter("Patient".getBytes(), "MedicalHistory".getBytes(), CompareFilter.CompareOp.EQUAL, patientHistory.getBytes());
+				scan.setAttribute("protected: "+"Patient" + ":MedicalHistory", "".getBytes());
+			}
+			else if (imageType != null){
+				filter = new SingleColumnValueFilter("Image".getBytes(), "Type".getBytes(), CompareFilter.CompareOp.EQUAL, imageType.getBytes());
+			}
+			else if (imageDate != null){
+				filter = new SingleColumnValueFilter("Image".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(imageDate));
+			}
+			else if (imageHour != null){
+				filter = new SingleColumnValueFilter("Image".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(imageHour));
+			}
+			else if (transferSyntax != null){
+				filter = new SingleColumnValueFilter("Image".getBytes(), "TransferSyntax".getBytes(), CompareFilter.CompareOp.EQUAL, transferSyntax.getBytes());
+			}
+			//    		else if (studyInstanceUID != null){
+			//    			//System.out.println("**************Setting studyInstanceUID filter************");
+			//    			filter = new SingleColumnValueFilter("Study".getBytes(),"InstanceUID".getBytes(), CompareFilter.CompareOp.EQUAL, studyInstanceUID.getBytes());
+			//    		}
+			else if (studyDate != null){
+				filter = new SingleColumnValueFilter("Study".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(studyDate));
+			}
+			else if (studyHour != null){
+				filter = new SingleColumnValueFilter("Study".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(studyHour));
+			}
+			else if (studyDesc != null){
+				filter = new SingleColumnValueFilter("Study".getBytes(), "Description".getBytes(), CompareFilter.CompareOp.EQUAL, studyDesc.getBytes());
+			}
+			else if (seriesInstanceUID != null){
+				filter = new SingleColumnValueFilter("Series".getBytes(), "InstanceUID".getBytes(), CompareFilter.CompareOp.EQUAL, seriesInstanceUID.getBytes());
+			}
+			else if (seriesDate != null){
+				filter = new SingleColumnValueFilter("Series".getBytes(), "Date".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(seriesDate));
+			}
+			else if (seriesHour != null){
+				filter = new SingleColumnValueFilter("Series".getBytes(), "Time".getBytes(), CompareFilter.CompareOp.EQUAL, Longs.toByteArray(seriesHour));
+			}
+			else if (modality != null){
+				filter = new SingleColumnValueFilter("Series".getBytes(), "Modality".getBytes(), CompareFilter.CompareOp.EQUAL, modality.getBytes());
+			}
+			else if (manufacturer != null){
+				filter = new SingleColumnValueFilter("Series".getBytes(), "Manufacturer".getBytes(), CompareFilter.CompareOp.EQUAL, manufacturer.getBytes());
+			}
+			else if (institution != null){
+				filter = new SingleColumnValueFilter("Series".getBytes(), "Institution".getBytes(), CompareFilter.CompareOp.EQUAL, institution.getBytes());
+				scan.setAttribute("protected: " + "Series" + ":Institution", "".getBytes());
+			}
+			else if (referingPhysician != null){
+				filter = new SingleColumnValueFilter("Series".getBytes(), "ReferingPhysician".getBytes(), CompareFilter.CompareOp.EQUAL, referingPhysician.getBytes());
+				scan.setAttribute("protected: " + "Series" + ":ReferingPhysician", "".getBytes());
+			}
+			else if (seriesDesc != null){
+				filter = new SingleColumnValueFilter("Series".getBytes(), "Description".getBytes(), CompareFilter.CompareOp.EQUAL, seriesDesc.getBytes());
+			}
+			System.out.println(scan.getAttribute("protected:Patient:Weight"));
+			scan.setFilter(filter);
+			ResultScanner scanner = tableInterface.getScanner(scan);
+			for (Result res = scanner.next(); res != null; res = scanner.next()){
+				String value = new String(res.getRow());
+				DicomInputStream dis = new DicomInputStream (new File(imagesFolder + "/" + value));
+				DatasetWithFMI dataWithFMI = dis.readDatasetWithFMI();
+				String uri = dis.getURI();
+				Attributes dataset = dataWithFMI.getDataset();
+				String cuid = dataset.getString(Tag.SOPClassUID);
+				String tsuid = dataset.getString(Tag.TransferSyntaxUID);
+				InstanceLocator resInstance = new InstanceLocator(cuid, value, tsuid, uri);
+				list.add((T) resInstance);
+			}
+		}
+		tableInterface.close();
+		System.out.println("*************Closing table interface**************");
+		int num_res= list.size();
+		System.out.println("***************Number of matches: " + num_res + "*************");
+		return list;
+	}
+
+	private long parseTime(String timeTag) throws java.text.ParseException{
 		int len = timeTag.length();
 		long mills;
 		if (len == 4){
@@ -1086,13 +1185,13 @@ public class DcmQRSCP<T extends InstanceLocator> {
 		mills = date.getTime();
 		return mills;
 	}
-    
-    public Connection getConnection() {
-        return conn;
-    }
-    
-    public ApplicationEntity getApplicationEntity() {
-        return ae;
-    }
+
+	public Connection getConnection() {
+		return conn;
+	}
+
+	public ApplicationEntity getApplicationEntity() {
+		return ae;
+	}
 
 }
