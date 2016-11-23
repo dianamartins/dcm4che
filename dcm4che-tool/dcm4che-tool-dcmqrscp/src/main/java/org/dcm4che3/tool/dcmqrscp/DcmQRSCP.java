@@ -607,8 +607,8 @@ public class DcmQRSCP<T extends InstanceLocator> {
 	public static void main(String[] args) {
 		try {
 			//String [] myargs = {"-b","DCMQRSCP:11113","--dicomdir","/Users/dianamartins/testat-getscu/DICOMDIR","--storage-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--retrieve-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--query-sop-classes","/Users/dianamartins/query-sop-classes.properties","--ae-config","/Users/dianamartins/ae.properties"}; 
-			String [] myargs = {"-b","DCMQRSCP:11116","-f","def-hbase-client.xml", "--storage-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--retrieve-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--query-sop-classes","/Users/dianamartins/query-sop-classes.properties","--ae-config","/Users/dianamartins/ae.properties","--dicomdir","/Users/dianamartins/apoio/apoio2/DICOMDIR","-d","/Users/dianamartins/images_databases/"};
-			CommandLine cl = parseComandLine(myargs);
+			//String [] myargs = {"-b","DCMQRSCP:11116","-f","def-hbase-client.xml", "--storage-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--retrieve-sop-classes","/Users/dianamartins/storage-sop-classes.properties","--query-sop-classes","/Users/dianamartins/query-sop-classes.properties","--ae-config","/Users/dianamartins/ae.properties","--dicomdir","/Users/dianamartins/apoio/apoio2/DICOMDIR","-d","/Users/dianamartins/images_databases/"};
+			CommandLine cl = parseComandLine(args);
 			DcmQRSCP<InstanceLocator> main = new DcmQRSCP<InstanceLocator>();
 			if (cl.hasOption("hbase")) {
 				System.out.println("************* Option -f recognized, usingHBase=true ***********");
