@@ -963,6 +963,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
 			Long get_time = t4 - t3;
 			LOG.debug("DATD The result of value is "+ res.getRow());
 			String value = new String(res.getRow());
+			Long now = System.nanoTime();
 			if (value != null){
 				long t5 = System.nanoTime();
 				DicomInputStream dis = new DicomInputStream (new File(imagesFolder + "/" + value));
@@ -978,8 +979,8 @@ public class DcmQRSCP<T extends InstanceLocator> {
 				long t8 = System.nanoTime();
 				Long instance_time = t8-t7;
 				list.add((T) resInstance);
-				File results_read = new File("/home/gsd/dcm4che/results/read.txt");
-				File results_instance = new File("/home/gsd/dcm4che/results/instance.txt");
+				File results_read = new File("/home/gsd/dcm4che/results/read" + now.toString() + ".txt");
+				File results_instance = new File("/home/gsd/dcm4che/results/instance" + now.toString() + ".txt");
 				if (!results_read.exists()){
 					try {
 						results_read.createNewFile();
@@ -996,7 +997,6 @@ public class DcmQRSCP<T extends InstanceLocator> {
 					e.printStackTrace();
 				}
 				BufferedWriter bw = new BufferedWriter(fw);
-
 				if (read_time != 0){
 					try{
 						bw.append(read_time.toString());
@@ -1035,10 +1035,10 @@ public class DcmQRSCP<T extends InstanceLocator> {
 						e.printStackTrace();
 					}
 				}
-				bw.flush();
-				bw.close();
+				bw_instance.flush();
+				bw_instance.close();
 			}
-			File results_get = new File("/home/gsd/dcm4che/results/get.txt");
+			File results_get = new File("/home/gsd/dcm4che/results/get" + now.toString() + ".txt");
 			if (!results_get.exists()){
 				try {
 					results_get.createNewFile();
@@ -1047,26 +1047,26 @@ public class DcmQRSCP<T extends InstanceLocator> {
 					e.printStackTrace();
 				}
 			}
-			FileWriter fw = null;
+			FileWriter fw_get = null;
 			try {
-				fw = new FileWriter(results_get.getAbsoluteFile());
+				fw_get = new FileWriter(results_get.getAbsoluteFile());
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			BufferedWriter bw = new BufferedWriter(fw);
+			BufferedWriter bw_get = new BufferedWriter(fw_get);
 
 			if (get_time != 0){
 				try{
-					bw.append(get_time.toString());
-					bw.newLine();
+					bw_get.append(get_time.toString());
+					bw_get.newLine();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
-			bw.flush();
-			bw.close();
+			bw_get.flush();
+			bw_get.close();
 		}else{
 			Scan scan = new Scan();
 			System.out.println("************patient weight: "+patientWeight+"*********");
