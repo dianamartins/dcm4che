@@ -1140,6 +1140,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
 			}
 			System.out.println(scan.getAttribute("protected:Patient:Weight"));
 			scan.setFilter(filter);
+                        scan.setCaching(0);
 			ResultScanner scanner = tableInterface.getScanner(scan);
 			for (Result res = scanner.next(); res != null; res = scanner.next()){
 				String value = new String(res.getRow());
