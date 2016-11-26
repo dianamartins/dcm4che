@@ -134,8 +134,8 @@ public class StoreSCP {
           String dir = cl.getOptionValue("directory", ".");
           System.out.println("Config " + config );
           System.out.println("Directory "+ dir);
-    	  //cstoreSCP = new DefaultHBaseStore(config, dir);
-          cstoreSCP = new SymHBaseStore(config, dir);
+    	  cstoreSCP = new DefaultHBaseStore(config, dir);
+          //cstoreSCP = new SymHBaseStore(config, dir);
           //cstoreSCP = new ShareHBaseStore(config, dir);
         } else {
     		cstoreSCP = new DefaultStoreSCP();

@@ -622,7 +622,8 @@ public class DcmQRSCP<T extends InstanceLocator> {
 				confHBase.set("hbase.zookeeper.property.clientPort","2181");
 				//confHBase.addResource(cl.getOptionValue("hbase"));
 				imagesFolder = cl.getOptionValue("imagesFolder");
-                                tableInterface = new SymColTable(confHBase, "DicomTable");
+                                //tableInterface = new SymColTable(confHBase, "DicomTable");
+                                HTableInterface tableInterface = new HTable (confHBase, "DicomTable");
 			}else{
 				usingHBase = false;
 			}
