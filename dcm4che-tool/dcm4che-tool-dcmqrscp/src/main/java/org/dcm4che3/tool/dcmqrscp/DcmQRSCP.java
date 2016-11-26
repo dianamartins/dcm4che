@@ -623,7 +623,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
 				//confHBase.addResource(cl.getOptionValue("hbase"));
 				imagesFolder = cl.getOptionValue("imagesFolder");
                                 //tableInterface = new SymColTable(confHBase, "DicomTable");
-                                HTableInterface tableInterface = new HTable (confHBase, "DicomTable");
+                                tableInterface = new HTable (confHBase, "DicomTable");
 			}else{
 				usingHBase = false;
 			}
