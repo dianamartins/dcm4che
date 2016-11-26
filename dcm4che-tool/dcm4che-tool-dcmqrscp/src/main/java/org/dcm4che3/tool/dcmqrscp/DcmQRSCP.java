@@ -849,7 +849,7 @@ public class DcmQRSCP<T extends InstanceLocator> {
 	public List<T> calculateHBaseMatches(Attributes keys)
 			throws DicomServiceException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, FileNotFoundException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException { //throw InvalidNumberOfBits
 
-		EncryptionService encService = new EncryptionService(new byte[16], new byte[16]);
+		 //EncryptionService encService = new EncryptionService(new byte[16], new byte[16]);
 
 		System.out.println("*************Calculating HBase matches*********");
 		List<T> list = new ArrayList<T>();
